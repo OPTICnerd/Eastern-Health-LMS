@@ -2,6 +2,7 @@
 global.asa
 _notes
 dwsync.xml
+App_Data
 
 # Windows image file caches
 Thumbs.db

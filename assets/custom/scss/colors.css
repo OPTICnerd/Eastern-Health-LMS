@@ -1,0 +1,86 @@
+/*------------------------------------------------------------------
+[Color Scheme / Colors, textures]
+*/
+.e-bg-light-texture {
+  background: url("../images/backgrounds/dark_fish_skin.png"); }
+
+.color01 {
+  background-color: #f2f2f2 !important; }
+
+.color02 {
+  background-color: #dadada !important; }
+
+.color03 {
+  background-color: #c1c1c1 !important; }
+
+.color04 {
+  background-color: #a7a7a7 !important; }
+
+.color05 {
+  background-color: #8e8e8e !important; }
+
+.color06 {
+  background-color: #737373 !important; }
+
+.color07 {
+  background-color: #5d5d5d !important; }
+
+.color08 {
+  background-color: #4a4a4a !important; }
+
+.color09 {
+  background-color: #404040 !important; }
+
+.color10 {
+  background-color: #303030 !important; }
+
+.red {
+  background-color: #e74c3c !important; }
+
+.orange {
+  background-color: #e67e22 !important; }
+
+.green {
+  background-color: #1abc9c !important; }
+
+.blue {
+  background-color: #3498db !important; }
+
+.darkblue {
+  background-color: #1c4a6c !important; }
+
+.cyan {
+  background-color: #9b59b6 !important; }
+
+.yellow {
+  background-color: #d9a81d !important; }
+
+.l-grey {
+  background-color: #f2f2f2 !important; }
+
+.grey {
+  background-color: #999 !important; }
+
+.skin {
+  background-color: #fff !important; }
+
+.fontcolor-regular, .fontcolor-regular a {
+  color: #303030 !important; }
+
+.fontcolor-invert, .fontcolor-invert a {
+  color: #f2f2f2 !important; }
+
+.fontcolor-medium, .fontcolor-medium a {
+  color: #737373 !important; }
+
+.fontcolor-medium-light, .fontcolor-medium-light a {
+  color: #8e8e8e !important; }
+
+.hovercolor, .hovercolor a {
+  color: #e74c3c !important; }
+
+.accent-color, .accent-color a {
+  color: #007EA7 !important; }
+
+.accent-color a:hover {
+  color: #e74c3c !important; }

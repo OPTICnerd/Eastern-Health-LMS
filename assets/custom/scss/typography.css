@@ -1,0 +1,75 @@
+/*
+Error: Undefined variable: "$hovercolor".
+        on line 34 of C:\Users\toddp\Creative Cloud Files\easternhealth.mycpd.ca\assets\custom\scss\typography.scss
+
+29: h2 { font-size: 48px;}
+30: h3 {  line-height: 1.2em;  font-size: 32px;  }
+31: h4 {letter-spacing: 3px;}
+32: h5 {letter-spacing: 3px;}
+33: h6 {  font-size: 11px;  letter-spacing: 3px;  }
+34: h4, h5, h6 { a {color: $hovercolor;} }
+35: .title {
+36:   padding-bottom: 20px;
+37:   border-bottom: 1px solid rgba(255, 255, 255, .3);
+38:   display: initial;
+39: }
+
+Backtrace:
+C:\Users\toddp\Creative Cloud Files\easternhealth.mycpd.ca\assets\custom\scss\typography.scss:34
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/script/tree/variable.rb:49:in `_perform'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/script/tree/node.rb:50:in `perform'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:395:in `visit_prop'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:36:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:158:in `block in visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:79:in `block in with_base'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:115:in `with_frame'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:79:in `with_base'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:158:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:431:in `block (2 levels) in visit_rule'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:431:in `map'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:431:in `block in visit_rule'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:179:in `with_environment'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:429:in `visit_rule'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:36:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:158:in `block in visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:79:in `block in with_base'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:115:in `with_frame'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:79:in `with_base'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:158:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:431:in `block (2 levels) in visit_rule'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:431:in `map'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:431:in `block in visit_rule'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:179:in `with_environment'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:429:in `visit_rule'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:36:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:158:in `block in visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:79:in `block in with_base'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:115:in `with_frame'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/stack.rb:79:in `with_base'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:158:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:52:in `block in visit_children'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:52:in `map'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:52:in `visit_children'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:167:in `block in visit_children'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:179:in `with_environment'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:166:in `visit_children'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:36:in `block in visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:186:in `visit_root'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/base.rb:36:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:157:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/visitors/perform.rb:8:in `visit'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/root_node.rb:36:in `css_tree'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/tree/root_node.rb:20:in `render'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/engine.rb:278:in `render'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/exec/sass_scss.rb:420:in `run'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/exec/sass_scss.rb:63:in `process_result'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/exec/base.rb:52:in `parse'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/lib/sass/exec/base.rb:19:in `parse!'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/lib/ruby/gems/2.2.0/gems/sass-3.4.20/bin/sass:13:in `<top (required)>'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/bin/sass:23:in `load'
+D:/Adobe/Adobe Dreamweaver CC (2017 Beta)/ruby/bin/sass:23:in `<main>'
+*/
+body:before {
+  white-space: pre;
+  font-family: monospace;
+  content: "Error: Undefined variable: \"$hovercolor\".\A         on line 34 of C:\Users\toddp\Creative Cloud Files\easternhealth.mycpd.ca\assets\custom\scss\typography.scss\A \A 29: h2 { font-size: 48px;}\A 30: h3 {  line-height: 1.2em;  font-size: 32px;  }\A 31: h4 {letter-spacing: 3px;}\A 32: h5 {letter-spacing: 3px;}\A 33: h6 {  font-size: 11px;  letter-spacing: 3px;  }\A 34: h4, h5, h6 { a {color: $hovercolor;} }\A 35: .title {\A 36:   padding-bottom: 20px;\A 37:   border-bottom: 1px solid rgba(255, 255, 255, .3);\A 38:   display: initial;\A 39: }"; }

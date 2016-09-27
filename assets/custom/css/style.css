@@ -373,9 +373,20 @@ a i {
   -webkit-transition: all 0.25s ease 0s;
   -o-transition: all 0.25s ease 0s; }
 
+a {
+  cursor: pointer;
+  text-decoration: none;
+  color: #C60003;
+  transition: all 0.25s ease 0s;
+  -moz-transition: all 0.25s ease 0s;
+  -webkit-transition: all 0.25s ease 0s;
+  -o-transition: all 0.25s ease 0s; }
+
+
 a:hover,
 a:focus {
-  text-decoration: none;
+  text-decoration: underline;
+  color: #C60003;
   outline: none; }
 
 p {

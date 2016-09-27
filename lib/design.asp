@@ -29,17 +29,7 @@ function siteHeader(pageType)
    <!-- Custom styles -->
    <link href="/assets/custom/css/style.css"                          property='stylesheet' rel="stylesheet" type="text/css" media="screen"/>
 
-   <style>
-      #preloader {
-         position: fixed;
-         left: 0;
-         top: 0;
-         z-index: 99999;
-         width: 100%;
-         height: 100%;
-         overflow: visible;
-         background: #666666 url("/assets/custom/images/preloader.gif") no-repeat center center; }
-   </style>
+   
 
 </head>
 <!-- Preloader 
@@ -109,33 +99,27 @@ function siteHeader(pageType)
 </header>
 <!-- Container -->
 <div class="content-wrap">
-       
-      <%
-	  if session("UserMessage") <> "" then
-	  	echo("<br clear=""all""/>")
-	  	echo(session("UserMessage"))
-	  end if
-	
+<%
 end function
 
 function SiteMenu
 %>
  <ul id="nav" class="row nopadding cd-side-navigation">
    <li class="col-xs-4 col-sm-2 nopadding menuitem green">
-      <a href="index.html" class="hvr-sweep-to-bottom"><i class="flaticon-home"></i><span>home</span></a>
+      <a href="/" class="hvr-sweep-to-bottom"><i class="flaticon-home"></i><span>home</span></a>
    </li>
    <% 'if isLoggedIn = True  then %>
    <li class="col-xs-4 col-sm-2 nopadding menuitem blue">
-      <a href="resume.html" class="hvr-sweep-to-bottom"><i class="flaticon-calendar"></i><span>Schedule</span></a>
+      <a href="/schedule/" class="hvr-sweep-to-bottom"><i class="flaticon-calendar"></i><span>Schedule</span></a>
    </li>
    <li class="col-xs-4 col-sm-2 nopadding menuitem cyan">
-     <a href="portfolio.html" class="hvr-sweep-to-bottom"><i class="flaticon-speech-bubble"></i><span>Discussions</span></a>
+     <a href="/discussions/" class="hvr-sweep-to-bottom"><i class="flaticon-speech-bubble"></i><span>Discussions</span></a>
    </li>
    <li class="col-xs-4 col-sm-2 nopadding menuitem orange">
-      <a href="contacts.html" class="hvr-sweep-to-bottom"><i class="flaticon-agenda"></i><span>Resources</span></a>
+      <a href="/resources/" class="hvr-sweep-to-bottom"><i class="flaticon-agenda"></i><span>Resources</span></a>
    </li>
    <li class="col-xs-4 col-sm-2 nopadding menuitem red">
-      <a href="feedback.html" class="hvr-sweep-to-bottom"><i class="flaticon-share-1"></i><span>Feedback</span></a>
+      <a href="/feedback/" class="hvr-sweep-to-bottom"><i class="flaticon-share-1"></i><span>Feedback</span></a>
    </li>
    
       <!--blog</span></a>-->
@@ -143,10 +127,10 @@ function SiteMenu
    <%
    	'end if
    
-	if session("AccountType") = 3 then ' user is an admin
-		echo("<li class=""col-xs-4 col-sm-2 nopadding menuitem yellow""><a href=""/admin/"" class=""hvr-sweep-to-bottom""><i class=""flaticon-tool-1""></i><span>Administration</span></a></li>")
+	if session("AccountType") = 4 then ' user is an admin
+		echo("<li class=""col-xs-4 col-sm-2 nopadding menuitem yellow""><a href=""/admin/"" class=""hvr-sweep-to-bottom""><i class=""flaticon-cogwheel""></i><span>Administration</a></li>")
 	else
-		echo("<li class=""col-xs-4 col-sm-2 nopadding menuitem yellow""><a href=""/admin/"" class=""hvr-sweep-to-bottom""><i class=""flaticon-tool""></i><span>Log Out</span></a></li>")
+		echo("<li class=""col-xs-4 col-sm-2 nopadding menuitem yellow""><a href=""/admin/"" class=""hvr-sweep-to-bottom""><i class=""flaticon-arrow""></i><span>Log Out</a></li>")
 		
 		
 	end if
@@ -243,6 +227,7 @@ function siteFooter(pageType)
 <script src="/assets/vendor/pjax/jquery.pjax.js"                      type="text/javascript"></script>
 
 <!-- Custom scripts -->
+<script src="/assets/vendor/validator/jquery.form-validator.min.js"	  type="text/javascript"></script>
 <script src="/assets/custom/js/custom.js"                             type="text/javascript"></script>
 
 </body>
@@ -254,32 +239,30 @@ end function
 
 
 function showLogin
+
 %>
 <section id="homesection" class="container-fluid nopadding">
 	<div class="m-details row nopadding skin">
-    	<div class="col-md-6">
+    	<div class="col-md-4">
 	
-   <div class="padding-50 wow fadeIn" data-wow-delay="0.2s" data-wow-offset="10">
-    <%
-    if session("UserMessage") <> "" then
-      echo(session("UserMessage"))
-    end if
-    %>
-      <h3 class="font-accident-two-normal uppercase">Please Login</h3>
 
-      <form action="/admin/" method="post" class="sky-form">
+    	
+      <h3 class="font-accident-two-normal uppercase">Please Login</h3>
+	  <br>
+      <form method="post" class="sky-form" id="login">
 
 
           <fieldset class="nomargin">
 
               <label class="input">
-                  <i class="ico-append fa fa-user"></i>
-                  <input required type="text" name="frmLogin" placeholder="Login">
+            
+                  <input type="text" name="frmLogin" placeholder="Login" data-validation="email">
               </label>
 
               <label class="input">
-                  <i class="ico-append fa fa-lock"></i>
-                  <input required type="password" name="frmPassword" placeholder="Password">
+   
+                  <input type="password" name="frmPassword" placeholder="Password" data-validation="required" 
+		 data-validation-strength="2">
               </label>
 
           <div class="clearfix note margin-bottom-30">
@@ -296,12 +279,17 @@ function showLogin
 
       </form>
 
-  
-</div>
+  <br>
+
 
 		</div>
         <div class="col-md-6">
-			Right  
+        <br>
+			<%
+    if session("UserMessage") <> "" then
+      echo(session("UserMessage"))
+    end if
+    %>
 		</div>
  	</div>
 </section>

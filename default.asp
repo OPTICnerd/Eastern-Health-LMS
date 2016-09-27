@@ -11,6 +11,7 @@
 
 <%  
 	call siteHeader(PageType)
+	
 	if isLoggedIn = True then
 		call showMyAccount(session("MemberID"))
 	else

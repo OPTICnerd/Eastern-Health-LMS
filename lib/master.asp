@@ -98,7 +98,7 @@ end if
 function doAction(Action)
 	select case Action	
 		case 1 ' process login attempt
-			varEmail = IllegalChars(request.form("frmEmail"))
+			varEmail = IllegalChars(request.form("frmLogin"))
 			varPassword = IllegalChars(request.form("frmPassword"))
 	
 			call processLogin(varEmail, varPassword)
@@ -435,7 +435,7 @@ function showMessage(msgType, msgText)
 		case else ' info
 			msgClass = "primary"
 	end select
-	showMessage = "<div class=""alert alert-"&msgClass&" animated fadeOut animation-delay-14"">"
+	showMessage = "<div class=""alert alert-"&msgClass&""">"
 	showMessage = showMessage + "<button type=""button"" class=""close"" data-dismiss=""alert"" aria-hidden=""true"">&times;</button>"
     showMessage = showMessage + "  <p>"&msgText&"</p>"
     showMessage = showMessage + "</div><!-- notification "&msgClass&" -->"
@@ -543,17 +543,15 @@ end function
 
 function showMyAccount(MemberID)
 %>
+<section id="homesection" class="container-fluid nopadding">
+	<div class="m-details row nopadding skin">
 
-
-<div class="container">
-    <div class="row">
-        
-        <div class="col-md-8">
+        <div class="col-md-8 padding-50">
             <section class="css-section">
                   <% call getMyCourse(session("MemberID"), session("CohortID")) %>
             </section>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-4 padding-50">
             <div class="content-box box-default">
 				<span class="icon-ar icon-ar-lg icon-ar-inverse icon-ar-circle"><i class="fa fa-gears"></i></span>
 					<h4 class="content-box-title">Account Information</h4>
@@ -567,8 +565,8 @@ function showMyAccount(MemberID)
             </div>
         </div>
     </div>
-</div>
 
+</section>
 <%
 end function
 
@@ -592,7 +590,7 @@ function getMyCourse(memberID, CohortID)
 			echo("  <tr>")
 			echo("	<th>Course Name</th>")
 			echo("	<th>Course Type</th>")
-			echo("	<th>Complete</th>")
+			echo("	<th>Status</th>")
 			echo("  </tr>")
 			echo("</thead>")
 			echo("<tbody>")
@@ -603,14 +601,14 @@ function getMyCourse(memberID, CohortID)
 				varLMSid = rsArr1(3,b)
 				echo("<tr>")
 				if varCourseTypeID = 1 then ' online course
-					echo("<td><a onclick='launchCourse("&varLMSid&");'>"&varCourseName&"</a></td>")
+					'echo("<td><a onclick='launchCourse("&varLMSid&");'>"&varCourseName&"</a></td>")
 					echo("<td><a class=""courseLaunch"" lmsID="""&varLMSid&""">"&varCourseName&"</a></td>")
 				else ' onsite course
 					echo("<td>"&varCourseName&"</td>")
 				end if
 				
 				echo("<td>"&varCourseTypeText&"</td>")
-				echo("<td><br></td>")
+				echo("<td>"&showCourseCompletionStatus(varLMSid, session("memberID"))&"</td>")
 				echo("</tr>")
 			Next
 			echo("	</tbody>")
@@ -618,6 +616,33 @@ function getMyCourse(memberID, CohortID)
 	end if
 end function
 
+
+function showCourseCompletionStatus(LMSid, MemberID)
+	showCourseCompletionStatus = LMSid
+	Set rs = server.CreateObject ("Adodb.Recordset")
+	
+	sql = "select fldCompleteStatus from tblCompletionTracker where fldLMSid =? and fldMemberID = ?"
+	
+	Set cmd = Server.CreateObject("ADODB.Command")    
+		cmd.ActiveConnection = cnnR
+		cmd.CommandText = sql
+		cmd.CommandType = adCmdText
+		cmd.Parameters(0) = LMSid
+		cmd.Parameters(1) = MemberID
+	
+		Set rs = cmd.Execute()
+			If (rs.eof or rs.bof) then
+				showCourseCompletionStatus = "incomplete"
+			else
+				showCourseCompletionStatus = rs("fldCompleteStatus")
+				select case showCourseCompletionStatus
+					case "completed"
+						showCourseCompletionStatus = "complete"
+					case else
+						showCourseCompletionStatus = "incomplete"
+				end select				
+			end if
+end function
 
 function showStatus(StatusID)
 Set rs = server.CreateObject ("Adodb.Recordset")

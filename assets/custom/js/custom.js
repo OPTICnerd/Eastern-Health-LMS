@@ -1,3 +1,18 @@
+(function($) {
+    $(document).ready(function() {
+      	$('.courseLaunch').on('click', '', function () {
+			var LMSid = $(this).attr('lmsID');
+			console.log(LMSid);
+			launchCourse(LMSid);
+		});
+    });
+}) (jQuery);
+
+function launchCourse(LMSid) {
+	window.open("/lms/module/"+LMSid+"", "_blank", "toolbar=no, scrollbars=no, resizable=no, top=500, left=500, width=1050, height=685");
+};
+
+
 (function ($) {
     'use strict';
 
@@ -27,12 +42,19 @@
         }, 100);
 
     });
-
+	$.validate({
+		form : '#login'
+  	});
     $(document).ready(function () {
 
         commonScripts();
 
         pageScripts();
+		
+	
+		
+		
+  
 
         /* Ajax page load settings */
         $(document).on('pjax:end', pageScripts);

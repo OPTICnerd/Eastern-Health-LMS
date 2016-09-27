@@ -100,6 +100,24 @@ function bookmarkTrigger(MemberID, LMSid, bookmarkValue)
 	end if
 end function
 
+function getBookMark(LMSid)
+	sql = "select fldBookmarkValue from tblBookMark where fldLMSid = ? and fldMemberID = ?"
+	Set cmd = Server.CreateObject("ADODB.Command")
+	cmd.ActiveConnection = Application("DataBaseW")
+	cmd.CommandText = sql
+	cmd.CommandType = adCmdText
+	cmd.Parameters(0) = LMSid
+	cmd.Parameters(1) = session("memberID")
+	Set rs = cmd.Execute()
+	if (rs.eof or rs.bof) then ' new entry so do insert
+		getBookMark = ""
+	else
+		getBookMark = rs("fldBookmarkValue")
+	end if
+
+end function
+
+
 function saveLessonStatus(memberIDValue, courseIDValue, statusValue)
 
 	' delete old bookmarks

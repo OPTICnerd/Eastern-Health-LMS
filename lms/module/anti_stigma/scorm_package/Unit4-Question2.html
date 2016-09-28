@@ -1,0 +1,86 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Explaining the Impact of Income on Health</title>
+<link href="layout.css" rel="stylesheet" type="text/css">
+<script src="jquery2.tools.min.js"></script>
+<script src="modernizr-2.5.3-min.js"></script>
+<script src="foundation.js"></script>
+<script src="app.js"></script>
+<script>
+                function clickAnswer(ans,el) {
+                                if($('#'+ans).is(':visible')) {
+                                                $('#'+ans).fadeOut('fast');
+                                } else {
+                                                $('#'+ans).fadeIn('fast');
+                                                $('html,body').animate({scrollTop: $('#'+ans).offset().top-100}, 'slow');
+                                }                             
+                                $( ":radio" ).attr('disabled', 'disabled');
+                                return false;
+                }
+</script>
+</head>
+
+<body><div class="scrollContainerContentPages">
+<h1>Question 2</h1>
+
+
+<p><strong>What further history do you want if any?</strong></p>
+<p>&nbsp;</p>
+<table border="0" cellpadding="3" cellspacing="0" id="table-2">
+  
+  <tr>
+  <td align="right" valign="top"><input type="radio" name="q1a" id="q1a" value="1" onClick="clickAnswer('ans1a','q1');" /></td>
+  <td align="left" valign="top">1</td>
+  <td align="left" valign="top"><p> How hard is she trying to get her life together</p>
+        
+      </td>
+</tr>
+<tr>
+  <td align="right" valign="top"><input type="radio" name="q2a" id="q2a" value="1" onClick="clickAnswer('ans1a','q2');" /></td>
+  <td align="left" valign="top">2</td>
+  <td align="left" valign="top"> What her financial situation is like</td>
+</tr>
+<tr>
+  <td align="right" valign="top"><input type="radio" name="q3a" id="q3a" value="1" onClick="clickAnswer('ans1a','q3');" /></td>
+  <td align="left" valign="top">3.</td>
+  <td align="left" valign="top">If she has a history of mood elevation and hypomanic or manic episodes</td>
+</tr>
+<tr>
+  <td align="right" valign="top"><input type="radio" name="q3a" id="q3a" value="1" onClick="clickAnswer('ans1a','q3');" /></td>
+  <td align="left" valign="top">4.</td>
+  <td align="left" valign="top">What her pattern of alcohol use is</td>
+</tr>
+
+<tr>
+  <td align="right" valign="top"><input type="radio" name="q3a" id="q3a" value="1" onClick="clickAnswer('ans1a','q3');" /></td>
+  <td align="left" valign="top">5.</td>
+  <td align="left" valign="top">None</td>
+</tr>
+
+<tr>
+  <td align="right" valign="top">&nbsp;</td>
+  <td align="left" valign="top">&nbsp;</td>
+  <td align="left" valign="top">&nbsp;</td>
+</tr>
+<tr>
+  <td colspan="3" align="right" valign="top">
+  </td>
+  </tr>
+</table>
+    
+    
+    <div style="display:none" id="ans1a"><p><h2>Feedback</h2>
+    <strong><p>Correct Answer: If she has a history of mood elevation and hypomanic or manic episodes</p></strong>
+
+
+<p>Clinical depression is more than normal life stress or financial, marital stress and not due to weakness or effort. As she has a clear major depressive episode it is necessary to determine and diagnose if this episode is part of an underlying unipolar depressive disorder or a mood episode of a bipolar disorder. This is relevant as treatment of bipolar and unipolar mood disorders are different. For example medication with antidepressants alone may worsen an underlying bipolar condition and precipitate a manic episode. Alcohol and substance history is also important but mood and substance use disorders are often comorbid and should be treated concurrently. Treatment of the mood disorder can increase likelihood of subsequent improvement of the substance use disorder and should not be withheld. Addressing stressors will be important but will not contribute to your initial diagnosis as strongly at this point.</p></div>
+  
+  <div style="display:none" id="ans2a"><p>Incorrect. The correct answer is c.<br>All three factors appeared related and affect residents in the same city areas, where those with low income mostly live.</p></div>
+
+ 
+<br clear="all">
+</div>
+</body>
+</html>

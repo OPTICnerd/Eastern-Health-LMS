@@ -109,4 +109,4 @@ window.API = (function(){
 		margin: 0;
 	}
 </style>
-<iframe src="scorm_package/index_lms_html5.html" width=1050 height=670 frameborder="0" seamless></iframe>
+<iframe src="scorm_package/a001index.html" width=1050 height=670 frameborder="0" seamless></iframe>

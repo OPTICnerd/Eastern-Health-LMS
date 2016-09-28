@@ -1,0 +1,356 @@
+.backNext {opacity:0;}
+#courseContent {
+	padding: 0 10px 0 20px;
+	min-height: 300px;
+	width:809px;
+}
+
+.headlineFirst{margin-left:30px;}
+.content_9_of_12{width:83%}
+
+.alink{
+	text-decoration:none;
+	/*border-bottom:2px dotted #bbb; padding-bottom:0.02em;*/
+}
+
+/* from mdcme base.css */
+
+
+
+/* Tabs
+====================================*/
+.tabs-nav {
+	list-style: none;
+	margin: 0;
+	overflow: hidden;
+	padding: 0;
+	width: 100%;
+}
+
+.tabs-nav li {
+	float: left;
+	line-height: 34px;
+	overflow: hidden;
+	padding: 0;
+	/*position: relative;*/
+	margin: 0 0 -1px 0;
+}
+
+
+.tabs-nav li a {
+	background-color: #fafafa;
+	border: 1px solid #ddd;
+	border-right: none;
+	border-bottom: 1px solid #ddd;
+	color: #888;
+	display: block;
+	letter-spacing: 0;
+	outline: none;
+	padding: 0 16px;
+	text-decoration: none;
+}
+
+.ie7 .tabs-nav li a {height: 35px;}
+
+.tabs-nav li:first-child a {border-left: 1px solid #ddd;}
+.tabs-nav li:last-child a {border-right: 1px solid #ddd;}
+
+.tabs-nav li.active a {	color: #404040; font-weight: bold;}
+.tabs-nav li.active a i {opacity: 1; filter: alpha(opacity=100);}
+.tabs-nav li i {opacity: 0.5; filter: alpha(opacity=50);}
+				
+.tabs-nav li a:hover  {background: #fff;}
+
+.tabs-nav li.active a {
+	background: #fff;
+	border-bottom: 2px solid #fff;
+}
+.tabs-container {
+	border: 1px solid #ddd;
+	margin: -1px 0 20px;
+	overflow: hidden;
+	width: 100%;
+	line-height: 19px;
+	-webkit-box-shadow:  0px 1px 1px 0px rgba(180, 180, 180, 0.1);
+	box-shadow:  0px 1px 1px 0px rgba(180, 180, 180, 0.1);
+}
+
+.tab-content {padding: 20px;}
+
+
+	
+/* ===== tabs ================*/
+
+ul.tabs {
+	margin: 0;
+	padding: 0;
+	float: left;
+	list-style: none;
+	height: 32px;
+	border-bottom: 1px solid #999;
+	border-left: 1px solid #999;
+	width: 99%;
+}
+
+ul.tabs li {
+	float: left;
+	margin: 0;
+	padding: 0;
+    height: auto;
+	line-height: 20px;
+	border: 1px solid #999;
+	border-left: none;
+	margin-bottom: -1px;
+	background: #e0e0e0;
+	overflow: hidden;
+	position: relative;
+}
+
+ul.tabs li a {
+	text-decoration: none;
+	color: #000;
+	display: block;
+	font-size: 1em;
+	padding: 0 20px;
+	border: 1px solid #fff;
+	outline: none;
+}
+
+ul.tabs li a:hover {
+	background: #ccc;
+}	
+
+html ul.tabs li.active, html ul.tabs li.active a:hover {
+	background: #DFECF7;
+	border-bottom: 1px solid #fff;
+}
+
+.tab_container {
+	border: 1px solid #999;
+	border-top: none;
+	clear: both;
+	float: left; 
+	width: 99%;
+	background: #fff;
+	-moz-border-radius-bottomright: 10px;
+	-khtml-border-radius-bottomright: 10px;
+	-webkit-border-bottom-right-radius: 10px;
+	-moz-border-radius-bottomleft: 10px;
+	-khtml-border-radius-bottomleft: 10px;
+	-webkit-border-bottom-left-radius: 10px;
+}
+
+.tab_content {
+	padding: 10px;
+	font-size: 1em;
+}
+
+.tab_content h2 {
+	padding-bottom: 10px;
+	border-bottom: 1px dashed #ddd;
+	font-size: 1.65em;
+}
+
+.tab_content h3 a{
+	color: #254588;
+}
+
+/* end of base.css */
+
+.backNext {opacity:0;}
+
+.hist a {color:#146ac6;}
+.hist a:hover {text-decoration:underline;}
+
+.QTable {
+	width:100%
+}
+.QTable>tbody>tr:nth-child(odd) {		background:	#f8f8f8;	}
+.QTable>tbody>tr {	border-top:1px solid #dfdfdf;	}	
+
+.tabs-container .QTable>tbody>tr:hover {background:#fffaec;	}	
+	
+.QTable>tbody>tr:first-child {
+	background:	#aaa;
+	font-weight:	bold;
+	color:#000;
+	border:1px solid #aaa;
+}
+	
+.QTable>tbody>tr>td {
+	padding:	2px 5px 2px 5px;	
+	vertical-align:middle;
+	font-size:11px;	
+}
+	
+.QTable>tbody>tr>td label{
+	font-size:11px;	
+}
+	
+.QTable>tbody>tr>td div{
+	font-size:11px;	
+}
+	
+.QTable>tbody>tr>td strong{
+	font-size:11px;	
+}
+	
+.QTable>tbody>tr>td li{
+	font-size:11px;	
+}
+	
+.QTable>tbody>tr>td p{
+	font-size:11px;	
+}
+		
+ul.tabs-nav>li {font-weight:normal;}
+.tabs-nav li a{font-family:Arial;font-size:9px; padding-left:11px; padding-right:11px;}
+
+.fq {margin-left:0px;background:#FD2;padding:1px 5px 1px 5px;border-radius:10px;} 
+.fb {display:none;margin-left:0px;} 
+.ls {display:none;margin-left:0px;} 
+.ffb {display:none;margin-left:0px;} 
+.q {background:#efefef;padding:1px 5px 1px 5px;border-radius:10px;} 
+.rdo_ls {display:inline;}
+
+.screens {
+	display:none;
+	background: url(imgClipBoardRepeat.jpg) top repeat-y;
+	padding: 10px 30px 30px 40px;
+}	
+
+.screens a:hover{
+	text-decoration:underline;
+}
+
+.defaulttxt {
+	margin-top:-8px;
+	padding: 0 0 0 0px;	
+}
+
+.clipboardtop {
+	background: url(imgClipBoardTop.jpg) top no-repeat;
+	min-height:123px;	
+	height:123px;
+	border: 0px solid #f00;
+}
+
+.clipboardbottom {
+	background: url(imgClipBoardBottom.jpg) top no-repeat;
+	min-height:42px;	
+	height:42px;	
+	border: 0px solid #f00;
+}
+
+.navbuttons {
+	padding:0 5px 0 5px;	
+}
+
+.imgthumb {
+	margin:-7px 0 0 1px;	
+}
+
+.videoIcon{
+	margin:0 5px 2px 0;	
+}
+
+.popButton{
+	color:#c12;
+}
+
+.jointtxt {
+	font-weight:bold;
+	font-size:11px;	
+}
+
+.indentLR{
+	margin:0 10px 0 10px;
+	font-weight:normal;	
+}
+
+.indentR{
+	margin:0 10px 0 0;	
+	font-weight:normal;
+}
+
+.historyLink {
+	text-align:right; 
+	width:450px; 
+	margin-left:400px; 
+	/*margin-top:-115px; */
+	display:inline-block;
+}
+
+.historyLinkInner {
+	padding-right: 5px; 
+	margin-top: -2px;
+}
+
+.hist {
+	position: absolute; 
+	right: 25px; 
+	/*top: 390px; */
+	top: 25px; 
+	float: right; 
+	width: 300px; 
+	text-align: left; 
+	background-color: #fff; 
+	border: 1px solid rgb(0, 0, 0); 
+	padding: 5px; z-index: 5001;  
+	background-position: initial initial; 
+	background-repeat: initial initial; 
+	display: none; 
+	margin-top:35px; 
+	z-index:9;
+	border-radius:10px;
+	font-weight:bold;
+	padding:10px;
+	font-size:11px;
+}
+
+.hist li {font-size:11px;}
+.casehist {
+	background-color: #f6f6f6;
+	color:#444;
+}
+
+.historyLink a.caseButton {
+	color:	#000;
+	text-decoration:	none;
+	display:	inline-block;
+	
+	/*position:	relative;*/
+	
+	height:	32px;
+	line-height:	35px;
+	padding:	0px 60px 0px 50px;
+	
+}
+
+.historyLink .caseButton.caseReset {
+	border-right:	1px solid #000;
+	background:	url(bttnResetCase.png) no-repeat 5px top;
+}
+
+.historyLink .caseButton.caseReset:hover {
+	background:	url(bttnResetCase_on.png) no-repeat 5px top;
+}
+
+.historyLink .caseButton.caseProgress {
+	border-right:	1px solid #000;
+	background:	url(bttnCaseProgress.png) no-repeat 5px top;
+}
+
+.historyLink .caseButton.caseProgress:hover {
+	background:	url(bttnCaseProgress_on.png) no-repeat 5px top;
+}
+
+.historyLink .caseButton.caseHistory {
+	background:	url(bttnCaseHistory.png) no-repeat 5px top;
+}
+
+.historyLink .caseButton.caseHistory:hover {
+	background:	url(bttnCaseHistory_on.png) no-repeat 5px top;
+}
+
+

@@ -7,26 +7,11 @@
 %>
 <!--#include file="../../../lib/master.asp" -->
 <!--#include file="../../../lib/scorm_code.asp" -->
-<%
-sql = "select fldBookmarkValue from tblBookMark where fldLMSid = ? and fldMemberID = ?"
-	Set cmd = Server.CreateObject("ADODB.Command")
-	cmd.ActiveConnection = Application("DataBaseW")
-	cmd.CommandText = sql
-	cmd.CommandType = adCmdText
-	cmd.Parameters(0) = LMSid
-	cmd.Parameters(1) = session("memberID")
-	Set rs = cmd.Execute()
-	if (rs.eof or rs.bof) then ' new entry so do insert
-		courseBookmark = ""
-	else
-		courseBookmark = rs("fldBookmarkValue")
-	end if
-
-
-' check and see if there is a bookmark in the db
-%>
+<script src="/assets/custom/js/js.cookie.js"></script>
+<script src="/assets/custom/js/opd_scorm.js"></script>
 <input type="text" value="<%=session("memberID") %>" id="memberID">
 <input type="text" value="<%= LMSid %>" id="LMSid">
+<input type="text" id="scorm_version">
 <script>
 function GetStudentName() {
 	return "<%=session("cmi.core.student_name")%>";
@@ -35,13 +20,16 @@ function GetStudentName() {
 
 <script type="text/javascript">
 // Office of Professional Development (OPD)  SCORM Javascript File
+
+//console.log(scorm.version);
+
 window.API = (function(){
   var data = {
     "cmi.core.student_id": "<%=session("cmi.core.student_id")%>",
     "cmi.core.student_name": "<%=session("cmi.core.student_name")%>",
     "cmi.core.lesson_location": "",
     "cmi.core.lesson_status": "not attempted",
-	"cmi.suspend_data" : "<%= courseBookmark %>"
+	"cmi.suspend_data" : "<%= getBookMark(LMSid) %>"
   };
   return {
     LMSInitialize: function() {
@@ -94,24 +82,15 @@ window.API = (function(){
     },
     LMSSetValue: function(model, value) {
       data[model] = value;
-	  //alert(model+':'+value);
-	  // let's fire this with ajax
-	  //if (data[model] = "'cmi.suspend_data'") {
-	//	console.log("the data to save is '"+model+" ** "+value+"'");  
-	//	saveBookmark(model,value);
-	//  }
+	  //console.log(model);
+	  //console.log(data[model]);
 	  
-	  if (data[model] = "'cmi.core.lesson_status'") {
-		 
-		//saveLessonStatus(model,value);
-	  }
-	  console.log(model+" ** "+value+"'"); 
-	  saveDataStatus(model,value);
+	  saveData(model,value);
 	  
       return "true";
     },
     LMSGetLastError: function() {
-      return "0";
+      return "X0X";
     },
     LMSGetErrorString: function(errorCode) {
       return "No error";
@@ -121,127 +100,6 @@ window.API = (function(){
     }
   };
 })();
-
-function saveBookmark(model, value) {
-	var courseID = document.getElementById('LMSid').value;
-	var memID = document.getElementById('memberID').value;
-	var xhr;
-   
-        if(typeof XMLHttpRequest !== 'undefined') xhr = new XMLHttpRequest();
-        else {
-            var versions = ["MSXML2.XmlHttp.5.0", 
-                            "MSXML2.XmlHttp.4.0",
-                            "MSXML2.XmlHttp.3.0", 
-                            "MSXML2.XmlHttp.2.0",
-                            "Microsoft.XmlHttp"]
- 
-             for(var i = 0, len = versions.length; i < len; i++) {
-                try {
-                    xhr = new ActiveXObject(versions[i]);
-                    break;
-                }
-                catch(e){}
-             } // end for
-        }
-         
-        xhr.onreadystatechange = ensureReadiness;
-         
-        function ensureReadiness() {
-            if(xhr.readyState < 4) {
-                return;
-            }
-             
-            if(xhr.status !== 200) {
-                return;
-            }
- 
-            // all is well  
-            if(xhr.readyState === 4) {
-                //callback(xhr);
-            }           
-        }
-
-        var url = "https://easternhealth.mycpd.ca/lms/scorm.asp?appKey=BXZ5GvMJpxZJLLuc3763&a=2&bookmark="+model+","+value+"&course="+courseID+"&mem="+memID+"";
-        xhr.open('POST', url, true);
-        xhr.send('');	
-}
-
-
-function saveDataStatus(model, value) {
-	
-	var courseID = document.getElementById('LMSid').value;
-	var memID = document.getElementById('memberID').value;
-	var xhr;
-   
-        if(typeof XMLHttpRequest !== 'undefined') xhr = new XMLHttpRequest();
-        else {
-            var versions = ["MSXML2.XmlHttp.5.0", 
-                            "MSXML2.XmlHttp.4.0",
-                            "MSXML2.XmlHttp.3.0", 
-                            "MSXML2.XmlHttp.2.0",
-                            "Microsoft.XmlHttp"]
- 
-             for(var i = 0, len = versions.length; i < len; i++) {
-                try {
-                    xhr = new ActiveXObject(versions[i]);
-                    break;
-                }
-                catch(e){}
-             } // end for
-        }
-         
-        xhr.onreadystatechange = ensureReadiness;
-         
-        function ensureReadiness() {
-            if(xhr.readyState < 4) {
-                return;
-            }
-             
-            if(xhr.status !== 200) {
-                return;
-            }
- 
-            // all is well  
-            if(xhr.readyState === 4) {
-                //callback(xhr);
-            }           
-        }
-		var courseID = document.getElementById('LMSid').value;
-		var memID = document.getElementById('memberID').value;
-		//console.log(model);
-		switch(model) {
-			case "cmi.core.session_time":
-				//code block
-				break;
-			case "cmi.suspend_data":
-				console.log("save bookmark");
-				
-				var url = "https://easternhealth.mycpd.ca/lms/scorm.asp?a=2&bookmark="+value+"&course="+courseID+"&mem="+memID+"";
-				console.log(url);
-        		xhr.open('POST', url, true);
-       			xhr.send('');
-				break;
-				//code block
-				break;
-			case "cmi.interactions.0.objectives.0.id":
-				var url = "https://easternhealth.mycpd.ca/lms/scorm.asp?a=3&course="+courseID+"&mem="+memID+"";
-        		xhr.open('POST', url, true);
-       			xhr.send('');
-				break;
-			
-			case "cmi.core.lesson_status":
-				var url = "https://easternhealth.mycpd.ca/lms/scorm.asp?a=1&status="+value+"&course="+courseID+"&mem="+memID+"";
-        		xhr.open('POST', url, true);
-       			xhr.send('');
-				
-				break;
-			default:
-				//var url = "https://2016.mycpd.ca/eh/submit.asp?appKey=BXZ5GvMJpxZJLLuc3763&a=1&status="+model+","+value+"&mem="+memID+"";
-        		//xhr.open('POST', url, true);
-       			//xhr.send('');
-		}
-        	
-}
 
 </script>
 <style>

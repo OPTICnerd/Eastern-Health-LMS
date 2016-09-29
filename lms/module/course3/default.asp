@@ -106,4 +106,4 @@ window.API = (function(){
 		margin: 0;
 	}
 </style>
-<iframe src="scorm_package/index_lms_html5.html" width=1050 height=670 frameborder="0" seamless></iframe>
+<iframe id="course_source" src="" width=1050 height=670 allowtransparency='true' scrolling='no' frameborder='0' seamless></iframe>

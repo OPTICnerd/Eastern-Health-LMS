@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- edited by Thomas Wason  -->
-<!--   xmlns:xml="http://www.w3.org/XML/1998/namespace" -->
 <xsd:schema targetNamespace="http://www.imsglobal.org/xsd/imsmd_rootv1p2p1" 
+            xmlns:xml="http://www.w3.org/XML/1998/namespace" 
             xmlns:xsd="http://www.w3.org/2001/XMLSchema" 
             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
             xmlns="http://www.imsglobal.org/xsd/imsmd_rootv1p2p1" 

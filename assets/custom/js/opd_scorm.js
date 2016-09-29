@@ -13,6 +13,8 @@ xhttp.onreadystatechange = function() {
 xhttp.open("GET", "scorm_package/imsmanifest.xml", true);
 xhttp.send();
 
+var traceMsgPrefix = "ERROR";
+
 function getSCORMversion(xml) {
 	// This will look in the course imsmanifest.xml file to see what version of SCORM the course is running
 	// The API calls are different depending on the version of SCORM 
@@ -24,13 +26,25 @@ function getSCORMversion(xml) {
     for (i = 0; i < x.length; i++) { 
         scorm_version += x[i].childNodes[0].nodeValue;
     }
+	//<resource identifier="_opd_course2_RES" type="webcontent" href="index_lms.html" adlcp:scormtype="sco">
+	
+	var launch_page = xmlDoc.getElementsByTagName("resource")[0].getAttribute("href");
+	console.log(launch_page);
+	
+	var course_source = "scorm_package/"+launch_page;
+	
+	document.getElementById("course_source").src=course_source;
 	
 	document.getElementById("scorm_version").value = scorm_version; 
 	
 	
 }
+function trace(input) {
+	console.log(input);
+}
 
 
+		
 
 function saveData(model, value) {
 	
@@ -75,7 +89,7 @@ function saveData(model, value) {
 		var memID = document.getElementById('memberID').value;
 		var CourseInteractionID;
 		//console.log(model);
-	
+		console.log(model+" ** "+value+"'"); 
 		switch(model) {
 			case "cmi.core.session_time":
 				//code block
@@ -153,7 +167,7 @@ function saveData(model, value) {
        			//xhr.send('');
 				
 				console.log(CourseInteractionScore); 
-				//console.log(model+" ** "+value+"'"); 
+				
 				
 		}
         	

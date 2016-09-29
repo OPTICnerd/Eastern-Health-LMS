@@ -113,10 +113,10 @@ function LMSInitialize()
 
       lmsInitCalled = true;
       lmsFinishCalled = false;
-      if( this.top.apiHandle ) 
+      if( window.myTop.apiHandle ) 
       {  
-         this.top.lmsInitCalled = lmsInitCalled;
-         this.top.lmsFinishCalled = lmsFinishCalled;
+         window.myTop.lmsInitCalled = lmsInitCalled;
+         window.myTop.lmsFinishCalled = lmsFinishCalled;
       }
       
       return result.toString();
@@ -157,10 +157,10 @@ function LMSFinish()
       
       lmsFinishCalled = true;
       lmsInitCalled = false;
-      if( this.top.apiHandle ) 
+      if( window.myTop.apiHandle) 
       {  
-         this.top.lmsInitCalled = lmsInitCalled;
-         this.top.lmsFinishCalled = lmsFinishCalled;
+         window.myTop.lmsInitCalled = lmsInitCalled;
+         window.myTop.lmsFinishCalled = lmsFinishCalled;
       }
       
       if( finishCalled == false )
@@ -207,8 +207,11 @@ function LMSGetValue(name)
    else
    {
       var value = api.LMSGetValue(name);
-      var valString = value.toString();
-      
+	  var valString;
+	  if(value != undefined)
+	  {
+		valString = value.toString();
+      }
       trivLogMsg( 'LMSGetValue for ' + name + ' = [' + valString + ']', 16 )
       return valString;
    }
@@ -243,10 +246,13 @@ function LMSSetValue(name, value)
    {
       var result = api.LMSSetValue(name, value);
       trivLogMsg( 'LMSSetValue for ' + name + ' to [' + value + ']', 16 )
-      if (result.toString() != "true")
-      {
-         var err = ErrorHandler("LMSSetValue Error: " + name + " to [" + value + "]" );
-      }
+      if(result != undefined)
+	  {
+		  if (result.toString() != "true")
+		  {
+			 var err = ErrorHandler("LMSSetValue Error: " + name + " to [" + value + "]" );
+		  }
+	  }
    }
 
    return;
@@ -470,7 +476,8 @@ function getAPIHandle()
 *******************************************************************************/
 function findAPI(win)
 {
-   while ((win.API == null) && (win.parent != null) && (win.parent != win))
+   var theAPI = win.API;
+   while ((theAPI == null) && (win.parent != null) && (win.parent != win))
    {
       findAPITries++;
       // Note: 7 is an arbitrary number, but should be more than sufficient
@@ -481,9 +488,14 @@ function findAPI(win)
       }
       
       win = win.parent;
-
+	  
+      if ( win.API )
+         theAPI = win.API;
+      else if ( win.window.opener != null && (typeof(win.window.opener) != "undefined") )
+         theAPI = findAPI(win.window.opener);
    }
-   return win.API;
+   
+   return theAPI;
 }
 
 
@@ -502,6 +514,7 @@ function findAPI(win)
 *******************************************************************************/
 function getAPI()
 {
+   findAPITries = 0;
    var theAPI = findAPI(window);
    if ((theAPI == null) && (window.opener != null) && (typeof(window.opener) != "undefined"))
    {

@@ -1,163 +1,598 @@
 /**************************************************
 Trivantis (http://www.trivantis.com)
 **************************************************/
-function saveVariable(name,value,days,title,lms) {
-  var titleMgr = getTitleMgrHandle();
-  var expires = ""
+
+var bTrivUseLocal = isLocalStorageSupported();
+function isLocalStorageSupported() {
+  try {
+    window.sessionStorage.setItem('test', '1');
+    window.sessionStorage.removeItem('test');
+    window.localStorage.setItem('test', '1');
+    window.localStorage.removeItem('test');
+    return true;
+  } catch (error) {
+    return false;
+  }
+}
+
+var delim = '|';
+var	storageVer = 2; //version of storage, change when the format of webstorage data changes. 
+//Be sure to write a converter function if it changes.
+//Version 1: initial implementation of web storage. beginning from Lectora v11.3
+//Version 2: switched from comma delimiter to | delimiter. beginning from Lectora v11.3.2
+
+function getWebStorageKey( title )
+{
+	return "Lectora" + storageVer + ( title ? (":"+ Encode(title)) : "" );
+}
+
+function saveVariable(name,value,days,title,lms, bHidden) {
+  convertCookies(title, bHidden)
+
+  if(bTrivUseLocal){
+	UpgradeStorageVersion();
+	var titleMgr = getTitleMgrHandle()
+	
+	var key = getWebStorageKey(title);
+	var data
+	if( days ) data = localStorage.getItem(key);
+	else data = sessionStorage.getItem(key);
+	
+	var bFound = false;
+	var newData = ""
+	if( data ){
+		var dataSplit = data.split(delim);
+		for( var i = 0; i<dataSplit.length; i++ ){
+			if( dataSplit[i].length == 0 )
+				continue;
+			
+			var varParts = dataSplit[i].split('=');
+			if( varParts.length == 2 ){
+				var n = unescapeDelim(varParts[0]);
+				var v = unescapeDelim(varParts[1]);
+				if( n == name ){
+					bFound = true;
+					v = value
+				}
+				
+				newData += (escapeDelim(n) + '=' + escapeDelim(v) + delim)
+			}
+		}
+	}
+	
+	if( !bFound ){
+		newData += (escapeDelim(name) + '=' + escapeDelim(value) + delim)
+	}
+	
+	if( days ) localStorage.setItem(key,newData);
+	else sessionStorage.setItem(key,newData);
+	  
+    if(!bHidden) trivLogMsg( 'saveVariable for ' + name + ' to [' + value + ']', 2 )
+    if( titleMgr ){
+	  titleMgr.setVariable(name,value,days)
+	  if( (!days || lms) && !document.TitleMgr && ! window.jTitleManager ) return
+    }
+  }
+  else
+	saveVariableInCookie( name,value,days,title,lms, bHidden );
+  
+}
+
+function saveVariableInCookie( name,value,days,title,lms, bHidden ){
+  var titleMgr = getTitleMgrHandle()
+  var props = "; path=/"
   
   if (days) {
-    var date = new Date();
+    var date = new Date()
     date.setTime(date.getTime()+(days*24*60*60*1000))
-    expires = "; expires="+date.toGMTString()
+    props += "; expires="+date.toGMTString()
   }
   
-  var encValue = UniEscape( value )
-  
-  // Find the cookie
-  var myCookie = (days ? 'LectoraPermCookie' : 'LectoraTempCookie' )
-  if( title )
-    myCookie += '_' + title
-    
-  var nameEQ = '|' + name + "="
-  var ca = document.cookie.split(';')
-  var i,j
-  var last = 0
-  var lastVal = null
-  var saveId = -1
+  var encName = Encode(name) 
+  var encValue = Encode(value)
+  var myCookie = (days ? '~LectoraPermCookie' : '~LectoraTempCookie' ) + ( title ? ':' + Encode(title) : '' ) + ':'
+  var relatedCookies = {} // other cookies with the same base name but a different index
+  var nameEQ = delim + encName + "="
+  var cookieName = null
+  var cookieValue = ''
+  var cookieIdx = 0
+  var saveIdx = -1
+  var highIdx = 1
 
-  for(i=0;i<ca.length;i++) 
+  var ca = document.cookie.split(';')
+
+  for ( var i=0; i<ca.length; i++ )
   {
-    var c = ca[i];
-    for( j = 0;j<c.length;j++)
+    var c = ca[i]
+    for( var j=0;j<c.length;j++)
     {
       if( c.charAt(j) != ' ' )
         break
     }
-    c = c.substring(j);
-    if( c.indexOf(myCookie) == 0 )
+    c = c.substring(j)
+
+    if ( c.indexOf(myCookie) === 0 )
     {
-      var ce=c.indexOf('=')
-      last = parseInt( c.substring( myCookie.length, ce ), 10 )
-      var vo = c.indexOf(nameEQ) 
-      if( vo >= 0 )
+      var equIdx = c.indexOf('=')
+      cookieIdx = parseInt(c.substring(myCookie.length, equIdx), 10) // get cookie index from: ~LectoraPermCookie_title.html1=|n1=v1|n2=v2|n3=v3|
+      highIdx = ( cookieIdx > highIdx ? cookieIdx : highIdx )
+      cookieName = myCookie + cookieIdx
+      var varIdx = c.indexOf(nameEQ)
+
+      if ( varIdx >= 0 )
       {
-        var start=c.substring(ce+1,vo)
-        var mid=c.substring(vo+nameEQ.length)
-        var end=mid.indexOf( '|' )
-        mid = mid.substring( end )
-        lastVal = start + mid
-        saveId = last
-        break
+        var firstPart = c.substring(equIdx + 1, varIdx) // null string or |n1=v1
+        var lastPart = c.substring(varIdx + nameEQ.length) // v2| or v2|n3=v3|
+        lastPart = lastPart.substring(lastPart.indexOf(delim)) // | or |n3=v3|
+        lastPart = ( !firstPart && lastPart == delim ? '' : lastPart )
+        cookieValue = firstPart + lastPart // |n1=v1|n3=v3| (current value of the cookie minus the var being updated or deleted)
+        saveIdx = cookieIdx // indicates an update or delete
       }
       else
       {
-        lastVal = c.substring( ce + 1 )
+        cookieValue = c.substring(equIdx + 1) // |n1=v1|n2=v2|n3=v3|
+      }
+
+      relatedCookies[cookieName] = cookieValue
+    }
+  }
+  if(!bHidden) trivLogMsg( 'saveVariable for ' + name + ' to [' + value + ']', 2 )
+  if( titleMgr )
+  {
+    titleMgr.setVariable(name,value,days)
+    if( (!days || lms) && !document.TitleMgr && ! window.jTitleManager ) return
+  }
+  
+  var isIns = ( saveIdx == -1 && days >= 0 );
+  var isUpd = ( saveIdx != -1 && days >= 0 );
+  var isDel = ( saveIdx != -1 && days < 0 );
+  var newVal = ( isDel ? '' : nameEQ + encValue + delim );
+
+  if ( isIns || isUpd || isDel )
+  {
+    // Loop through all indexes attempting to find a cookie with enough room to save the
+    // variable.  If none exist start a new cookie.  In the case of an update, try the
+    // original cookie first (so only 1 cookie update occurs) before trying other existing
+    // cookies.  Cookie indexes start at 1 but the loop starts at 0 so for updates the
+    // original cookie will be process at index 0 (first).  Also, the loop ends at highIdx + 1
+    // in case a cookie needs to be added and there were no holes in the index sequence.
+
+    for ( var cIdx = 0; cIdx <= highIdx + 1; cIdx++ )
+    {
+      if ( cIdx == saveIdx ) continue; // saveIdx was processed when cIdx was 0 (this is an update or delete of the variable)
+      if ( cIdx == 0 && isIns ) continue; // this is insert not an update or delete so skip index 0
+
+      cookieName = myCookie + ( cIdx == 0 ? saveIdx : cIdx ); // process matched cookie first if there was a match (this is an update or delete of the variable)
+      cookieValue = ( relatedCookies[cookieName] == undefined ? '' : relatedCookies[cookieName] ); // covers holes in the index sequence and new cookie
+
+      if ( cookieValue.length + newVal.length < 4000 )
+      {
+        if ( cookieValue && !isDel ) cookieValue = cookieValue.substring(0, cookieValue.length - 1); // remove ending '|'
+        document.cookie = cookieName + '=' + cookieValue + newVal + props;
+        // if ( document.cookie.length == 0 ) alert('IE7 4K cookie limit reached.  All variable data lost.');
+        break;
+      }
+      else if ( cIdx == 0 ) // update where new value is too big for old cookie (save without var and move on)
+      {
+        document.cookie = cookieName + '=' + cookieValue + props;
+        // if ( document.cookie.length == 0 ) alert('IE7 4K cookie limit reached.  All variable data lost.');
+      }
+      else if ( newVal.length >= 4000 ) // variable too big to insert or update
+      {
+        if(!bHidden) trivLogMsg('saveVariable failed for ' + name + ': length of value is greater than or equal to 4000 [' + newVal.length + ']', 2);
+        break;
       }
     }
   }
-  
-  trivLogMsg( 'saveVariable for ' + name + ' to [' + value + ']', 2 )
-  if( titleMgr )
-  {
-    titleMgr.setVariable(name,encValue,days)
-    if( (!days || lms) && !document.TitleMgr && ! window.jTitleManager )
-      return
-  }
-  
-  var newVal = nameEQ+encValue+"|"
-  if( lastVal != null && (lastVal.length + newVal.length < 4000) )
-  {
-      if( lastVal )
-        lastVal = lastVal.substring( 0, lastVal.length - 1 )
-      if( days < 0 )
-        newVal = null
-      var cookieName = myCookie + last
-      document.cookie = cookieName+"="+lastVal+newVal+expires+"; path=/"
-  }
-  else
-  {
-      if( lastVal != null && saveId != -1 ) {
-        var oldCookie = myCookie + saveId
-        document.cookie = oldCookie+"="+lastVal+expires+"; path=/"
-      }
-      var cookieName = myCookie + (last+1)
-      document.cookie = cookieName+"="+newVal+expires+"; path=/"
-  }
 }
 
-function readVariable(name,defval,days,title) {
-  var titleMgr = getTitleMgrHandle();
+function readVariable(name,defval,days,title, bHidden) {
+  convertCookies(title, bHidden)
+  if(bTrivUseLocal){
+	UpgradeStorageVersion();
+	var titleMgr = getTitleMgrHandle()
+	if( titleMgr == null || titleMgr.findVariable( name ) < 0 ){
+		var key = getWebStorageKey(title);
+		var data
+		
+		if(days) data = localStorage.getItem(key);
+		else data = sessionStorage.getItem(key);
+		
+		if( data ){
+			var dataSplit = data.split(delim);
+			
+			for( var i=0; i<dataSplit.length; i++ ){
+				if(dataSplit[i].length == 0)
+					continue;
+				
+				var varParts = dataSplit[i].split('=')
+				
+				if( varParts.length == 2 ){
+					var n = unescapeDelim(varParts[0]);
+					var v = unescapeDelim(varParts[1]);
+					if( n == name )
+					{
+						defval = v;
+						break;
+					}
+				}			
+			}
+		}
+		
+		if( titleMgr ) titleMgr.setVariable(name,defval,days)  
+	}
+	
+	if( titleMgr ) {
+      defval = String( titleMgr.getVariable(name,defval,days) )
+    }
+  }
+  else
+	defval = readVariableFromCookie(name,defval,days,title, bHidden);
+	
+  if(!bHidden) trivLogMsg( 'readVariable for ' + name + ' = [' + defval + ']', 1 )
+  return defval;
+}
+
+function readVariableFromCookie(name,defval,days,title, bHidden)
+{
+  var titleMgr = getTitleMgrHandle()
   if( titleMgr == null || titleMgr.findVariable( name ) < 0 )
   {
-    var myCookie = (days ? 'LectoraPermCookie' : 'LectoraTempCookie' )
-    if( title )
-      myCookie += '_' + title
-    var nameEQ = '|' + name + "="
+    var myCookie = (days ? '~LectoraPermCookie' : '~LectoraTempCookie' ) + ( title ? ':' + Encode(title) : '' ) + ':';
+    var nameEQ = delim + Encode(name) + "="
+    var i
+    
     var ca = document.cookie.split(';')
-    var i,j
   
     for(i=0;i<ca.length;i++) 
     {
-      var c = ca[i];
-      for( j = 0;j<c.length;j++)
+      var c = ca[i]
+      for( var j=0;j<c.length;j++)
       {
         if( c.charAt(j) != ' ' )
           break
       }
-      c = c.substring(j);
+      c = c.substring(j)
       if( c.indexOf(myCookie) == 0 )
       {
-        var vo = c.indexOf(nameEQ) 
-        if( vo >= 0 )
+        var varIdx = c.indexOf(nameEQ) 
+        if( varIdx >= 0 )
         {
-          var val=c.substring(vo+nameEQ.length)
-          var ve =val.indexOf( '|' )
-  
-          val = val.substring(0,ve);
-          var valUn = UniUnescape( val )
+          var val=c.substring(varIdx+nameEQ.length)
+          val = val.substring(0, val.indexOf(delim))
+          var valUn = Decode(val)
         
-          if( titleMgr )
-            titleMgr.setVariable(name,val,days)
-          trivLogMsg( 'readVariable for ' + name + ' = [' + valUn + ']', 1 )
-          return valUn
+          if( titleMgr ) titleMgr.setVariable(name,valUn,days)
+          
+          if(!bHidden) trivLogMsg( 'readVariable for ' + name + ' = [' + valUn + ']', 1 )
+		  return valUn
         }
       }
     }
   }
   
   if( titleMgr ) {
-    var res = new String( titleMgr.getVariable(name,UniEscape(defval),days) )
-    defval = UniUnescape( res )
+    defval = String( titleMgr.getVariable(name,defval,days) )
   }
-  trivLogMsg( 'readVariable for ' + name + ' = [' + defval + ']', 1 )
+  
+  if(!bHidden) trivLogMsg( 'readVariable for ' + name + ' = [' + defval + ']', 1 )
   return defval
 }
 
-function cleanupTitle( title ) {
-  if( window.name.indexOf( 'Trivantis_' ) == -1 ) {
-    var date = new Date();
-    date.setTime(date.getTime()+(-1*24*60*60*1000))
-    var expires = "; expires="+date.toGMTString()
+// Convert cookies from old style to new style.  This is because browsers store cookies
+// differently (some in UTF8 and some in the native code page of the machine) and also
+// because the latest version of the cookie spec dictates that only certain characters
+// can be in the cookie value.  Tomcat 7 for example will blow up (500 error) if a request
+// contains cookies with a value containing control characters.  Also, the 'expires' attr
+// will be set on all perm cookies to 30 days from the time of conversion.  There is no
+// good way to preserve the current expiration date of the cookies.
+//
+//    OLD STYLE: var name not encoded, var value encoded via UniEscape()
+//    NEW STYLE: var name and value encode via Encode() (encodeURI())
+function escapeDelim( s )
+{
+	s = s.toString();
+	return s.replace(/%/g, "%25").replace(/=/g, "%3D").replace(/\|/g, "%7C");
+}
 
-    var myCookie = 'LectoraTempCookie'
-    if( title )
-      myCookie += '_' + title
-    for( var i = 1; i < 21; i++ )
+function unescapeDelim( s )
+{
+	s = s.toString();
+	return s.replace(/%7C/g, delim).replace(/%3D/g, "=").replace(/%25/g, "%");
+}
+
+function convertCookies( title, bHidden )
+{
+		
+	CleanOutCommas();
+	
+	if( !title )
+		return;
+		
+	var arOldBaseNames = [ 'LectoraPermCookie', 'LectoraTempCookie' ]
+	var reOldBaseNames = new RegExp('^(' + arOldBaseNames.join('|') + ')[^=]*')
+	var reTitleName = new RegExp('^(Lectora.*Cookie' + (title?'_'+title:'') + ')([1-9])=(.*)')
+	var arOldCookies = document.cookie.split(';')
+	var oldCookies = {}
+	var c = null
+	var i = 0
+
+	var date = new Date()
+	date.setTime(date.getTime() + (30*24*60*60*1000))
+	var expires = "; expires=" + date.toGMTString()
+	date.setTime(0)
+	var expired = "; expires=" + date.toGMTString()
+
+	// Look for any cookies where the name begins with any of the names specified in
+	// arOldBaseNames. Collect all related parts in an array as in:
+	//
+	//	{
+	//		'LectoraPermCookie_title.html'  : [ 'valueOf1', 'valueOf2', 'valueOf3' ]
+	//		'LectoraPermCookie_xyz.html'  : [ 'valueOf1' ]
+	//		'LectoraPermCookie_foobar.html'  : [ 'valueOf1', 'valueOf2' ]
+	//	}
+	
+	for ( i = 0; i < arOldCookies.length; i++ )
+	{
+		c = arOldCookies[i];
+        for( var j=0;j<c.length;j++)
+        {
+            if( c.charAt(j) != ' ' )
+                break
+        }
+        c = c.substring(j)
+
+		var matches = reTitleName.exec( c );
+
+		if ( matches != null && matches.length == 4 )
+		{
+			var ocbn = matches[1] // old cookie base name
+			var oci = parseInt(matches[2]) // old cookie index
+			var ocv = matches[3] // old cookie value
+
+			if ( !oldCookies[ocbn] ) oldCookies[ocbn] = []
+			oldCookies[ocbn][oci] = ocv
+
+			if ( window.console && console.log ) console.log('convertCookies: found old cookie ['+ (ocbn + oci) + '] length=[' + ocv.length + ']')
+
+			document.cookie = ocbn + oci + '=' + expired + '; path=/'
+		}
+	}
+
+
+
+	// oldCookies now contains an attr for each cookie base name (i.e LectoraPermCookie_title.html).
+	// Loop through each one, get the combined value, then split out each variable and process
+	// one at a time saving cookies in the new format along the way.
+
+	for ( var baseName in oldCookies )
+	{
+		if ( typeof baseName == 'function' )
+			continue
+
+		// Combine all cookies with the same base name (i.e. LectoraPermCookie_title.html1,
+		// LectoraPermCookie_title.html2, LectoraPermCookie_title.html3, etc).
+
+		var oldCombinedValue = ''
+
+		for ( i = 1; i < oldCookies[baseName].length; i++ )
+		{
+			if ( typeof oldCookies[baseName][i] != 'string' )
+				continue
+
+			oldCombinedValue += oldCookies[baseName][i]
+		}
+
+		var isPerm = ( baseName.indexOf('LectoraPerm') == 0 )
+		var nci = 1
+		var ncv = delim
+		var vars = oldCombinedValue.split('|')
+
+		if ( window.console && console.log ) console.log('convertCookies: process old cookie ['+ baseName + '] parts(max)=[' + (oldCookies[baseName].length-1) + '] length=[' + oldCombinedValue.length + '] vars=[' + vars.length + ']')
+
+		if(bTrivUseLocal)
+		{
+			var keyName =  getWebStorageKey(title);
+			var data = ""
+			for ( i = 0; i < vars.length; i++ )
+			{
+				var oldNvPair = vars[i]
+				var oldParts = oldNvPair.split('=')
+				
+				if( oldParts.length == 2 )
+				{
+					var newName = escapeDelim(oldParts[0])
+					var newValue = escapeDelim(UniUnescape(oldParts[1]))
+					var newNvPair = newName + '=' + newValue + delim
+					data += newNvPair;
+				}
+				
+			}
+			if( baseName.indexOf( arOldBaseNames[0] ) == 0 )
+				localStorage.setItem(keyName,data);
+			else if( baseName.indexOf( arOldBaseNames[1] ) == 0 )
+				sessionStorage.setItem(keyName,data);
+				
+			if ( window.console && console.log ) console.log('convertCookies "' + baseName + '" to Web Storage: saving ['+ keyName + ']')
+			if(!bHidden) trivLogMsg('convertCookies "' + baseName + '" to Web Storage' + keyName + ' with length ')
+		}
+		else
+		{
+		
+			for ( i = 0; i < vars.length; i++ )
+			{
+				var oldNvPair = vars[i]
+				var oldParts = oldNvPair.split('=')
+
+				if ( oldParts.length == 2 )
+				{
+					var newName = Encode(oldParts[0])
+					var newValue = Encode(UniUnescape(oldParts[1]))
+					var newNvPair = newName + '=' + newValue + delim
+
+					if ( newNvPair.length >= 4000 )
+					{
+						if ( window.console && console.log ) console.log('convertCookies: VAR too large to process ['+ newName + '] length=[' + newNvPair.length + '] ++++++++++++++++++++++++++++++')
+						if(!bHidden) trivLogMsg('convertCookies found VAR [' + newName + '] too large to process - length is ' + newNvPair.length)
+						continue
+					}
+
+					if ( ncv.length + newNvPair.length < 4000 )
+					{
+						ncv += newNvPair
+						continue
+					}
+					var newBaseName = baseName.replace('_', ':');
+					document.cookie = '~' + newBaseName + ':' + nci + '=' + ncv + (isPerm ? expires : '') + '; path=/'
+
+					if ( window.console && console.log ) console.log('convertCookies: saving ['+ ('~' + baseName + nci) + '] length=[' + ncv.length + ']')
+					if(!bHidden) trivLogMsg('convertCookies saving cookie ' + ('~' + baseName + nci) + ' with length ' + ncv.length)
+
+					nci++
+					ncv = delim + newNvPair
+				}
+			}
+
+			if ( ncv.length > 1 )
+			{
+				var newBaseName = baseName.replace('_', ':');
+				document.cookie = '~' + newBaseName + ':' + nci + '=' + ncv + (isPerm ? expires : '') + '; path=/'
+
+				if ( window.console && console.log ) console.log('convertCookies: saving ['+ ('~' + baseName + nci) + '] length=[' + ncv.length + ']')
+				if(!bHidden) trivLogMsg('convertCookies saving cookie ' + ('~' + baseName + nci) + ' with length ' + ncv.length)
+			}
+		}
+	}
+}
+
+function UpgradeStorageVersion()
+{
+	//Upgrade from version 1 to version 2;
+    if (bTrivUseLocal) 
     {
-      var name = myCookie + i
-      if( readCookie( name, '' ) != '' )
-        document.cookie = name + "=" + expires + "; path=/"
-      else
-        break
-    }
-    return 1;
-  }
-  else
-    return 0;
+        var arrStorage = [localStorage, sessionStorage];
+
+		for( var j=0; j<arrStorage.length; j++ )
+		{
+			var keysToRemove = [];
+			var newKeyValues = [];
+			var store = arrStorage[j]; 
+			for (var i = 0; i < store.length; i++){
+				var key = store.key(i);
+				if( key.indexOf('Lectora:') == 0 || key == "Lectora" ) //if version 1 of storage data (version 1 had no number)
+				{
+					var data = store.getItem(key);
+					if( data.indexOf( ',' ) != -1 )
+					{
+						keysToRemove.push(key);
+						var newKey = key.replace(/Lectora/g, 'Lectora' + storageVer);
+						var newData = data.replace(/\|/g, '%7C');
+						newData = newData.replace(/,/g, delim);
+						newData = newData.replace(/%2C/g, ',');
+						newKeyValues.push({key:newKey, value:newData});
+					}
+				}
+			}
+			//add the new keys
+			for( var i=0; i<newKeyValues.length; i++ ){
+				store.setItem( newKeyValues[i].key, newKeyValues[i].value );
+			}
+			//remove the old keys
+			for( var i=0; i<keysToRemove.length; i++ ){
+				store.removeItem(keysToRemove[i]);
+			}
+		}
+	}
+}
+
+//This function will change commas to pipes in cookies. Cookies had commas used as 
+//delimiters starting from version 11.3, but should now be pipes starting at 11.3.2
+function CleanOutCommas()
+{
+	var arrCookieNames = ["~LectoraPermCookie", "~LectoraTempCookie"];
+	var arrCookies = document.cookie.split(';');
+	
+	var date = new Date()
+	date.setTime(date.getTime() + (30*24*60*60*1000))
+	var expires = "; expires=" + date.toGMTString()
+	date.setTime(0)
+	var expired = "; expires=" + date.toGMTString()
+	
+	for( var i=0; i<arrCookies.length; i++)
+	{
+		var currCookie = arrCookies[i];
+		var cookieToDelete = currCookie;
+		
+		//trim spaces at beginning
+		for( var j=0;j<currCookie.length;j++)
+        {
+            if( currCookie.charAt(j) != ' ' )
+                break
+        }
+        currCookie = currCookie.substring(j);
+		
+		if( (currCookie.indexOf(arrCookieNames[0]) == 0 ||
+			currCookie.indexOf(arrCookieNames[1]) == 0) && 
+			currCookie.indexOf(',') != -1 )
+		{
+			document.cookie = cookieToDelete + expired + '; path=/';
+			currCookie = currCookie.replace(/,/g, delim);
+			document.cookie = currCookie + expires + '; path=/';
+		}
+	}
+}
+	
+function cleanupTitle(title)
+{
+    if ( window.name.indexOf( 'Trivantis_' ) == -1 )
+	{
+		var c = null
+		var m = null
+		var props = "; path=/"
+		var date = new Date()
+		date.setTime(date.getTime() + (-1*24*60*60*1000))
+		props += "; expires=" + date.toGMTString()
+		var myCookie = '~LectoraTempCookie' + ( title ? ':' + Encode(title) : '' )
+		var reBaseName = new RegExp('^(' + myCookie + '[^=]*)')
+		var arCookies = document.cookie.split(';')
+
+		for ( var i = 0; i < arCookies.length; i++ )
+		{
+			c = arCookies[i]
+            for( var j=0;j<c.length;j++)
+            {
+                if( c.charAt(j) != ' ' )
+                break
+            }
+            c = c.substring(j)
+			m = reBaseName.exec(c)
+
+			if ( m && m.length == 2 )
+				document.cookie = m[1] + '=' + props
+		}
+
+		
+		if(bTrivUseLocal)
+		{
+			var key = getWebStorageKey(title);
+			try{
+				window.sessionStorage.removeItem(key);
+			}
+			catch( e ){
+			}
+		}		
+		
+		if ( title != title.toLowerCase() )
+			cleanupTitle(title.toLowerCase())
+
+		return 1
+	}
+
+	return 0
 }
 
 // Variable Object
-function Variable(name,defval,f,cm,frame,days,title) {
+function Variable(name,defval,f,cm,frame,days,title, bHidden) {
   this.origAICC = false
   this.bSCORM = false
   this.of=f
@@ -173,6 +608,14 @@ function Variable(name,defval,f,cm,frame,days,title) {
   this.cm=0
   this.title=title
   this.lastUT = null
+  if(!bHidden)
+  {
+	this.bHidden = false;
+  }
+  else
+  {
+	this.bHidden=bHidden;
+  }
   if( cm ) {
     this.cm = -1 * cm
     if(name=='CM_Course_ID')this.name='TrivantisCourse'
@@ -237,16 +680,20 @@ function Variable(name,defval,f,cm,frame,days,title) {
     }
     else {
       if( frame == 'scorm' || frame == 'scorm2004' || frame == 'tincan' ) this.bSCORM = true
-      if( name.indexOf('CMI_Core') == 0 ) {
-        this.origAICC = true
-        this.aiccgroup='cmi'
-        if( name == 'CMI_Core_Entry' ) {
-          this.name='cmi.core.entry'
-          this.update()
+      if (name.indexOf('CMI_Core') === 0)
+      {
+        this.origAICC = true;
+        this.aiccgroup = 'cmi';
+        var cmiprefix = ( frame == 'scorm2004' ? 'cmi' : 'cmi.core' );
+        if (name == 'CMI_Core_Entry')
+        {
+          this.name = cmiprefix + '.entry';
+          this.update();
         }
-        else {
-          this.name='cmi.core.exit'
-          this.value=this.defVal
+        else // 'CMI_Core_Exit'
+        {
+          this.name = cmiprefix + '.exit';
+          this.value = this.defVal;
         }
       }
       else if ( name == 'CMI_Completion_Status' ) {
@@ -279,8 +726,7 @@ function VarUpdateValue() {
     }
     var titleMgr = getTitleMgrHandle();
     if( titleMgr ) {
-      var vv=new String(titleMgr.getVariable(this.name,UniEscape(this.defVal),this.exp));
-      this.value=UniUnescape(vv);
+      this.value = String(titleMgr.getVariable(this.name,this.defVal,this.exp));
     }
     else this.value=this.defVal
   }
@@ -294,12 +740,12 @@ function VarUpdateValue() {
           var lmsVal = LMSGetValue( this.name );
           if( lmsVal == null )
             lmsVal = this.defVal;
-          this.value=new String( lmsVal );
+          this.value = String( lmsVal );
         }
         if( titleMgr ) {
-          titleMgr.setVariable(this.name,UniEscape(this.value),this.exp)
-          if( this.name=='cmi.learner_id' ) titleMgr.setVariable('cmi.core.student_id',UniEscape(this.value),this.exp)
-          if( this.name=='cmi.learner_name' ) titleMgr.setVariable('cmi.core.student_name',UniEscape(this.value),this.exp)
+          titleMgr.setVariable(this.name,Encode(this.value),this.exp)
+          if( this.name=='cmi.learner_id' ) titleMgr.setVariable('cmi.core.student_id',this.value,this.exp)
+          if( this.name=='cmi.learner_name' ) titleMgr.setVariable('cmi.core.student_name',this.value,this.exp)
           if( this.name=='cmi.core.total_time' || this.name=='cmi.total_time' ) this.value = UpdateSCORMTotalTime( this.value )
         }
       }
@@ -320,12 +766,12 @@ function VarUpdateValue() {
       if( this.bSCORM ) {
         this.value=this.defVal
         if( titleMgr && titleMgr.findVariable( this.name ) != -1 ){
-            var vv=new String(titleMgr.getVariable(this.name,UniEscape(this.defVal),this.exp));
-            this.value=UniUnescape(vv);
+            this.value = String(titleMgr.getVariable(this.name,this.defVal,this.exp));
         } else {
-          var data=new String( LMSGetValue( 'cmi.suspend_data' ) )
+          var data = String( GetSuspendData() )
+          if ( !this.bHidden ) trivLogMsg('cmi.suspend_data (unescaped) is currently [' + Decode(data) + ']')
           if( data == '' ) {
-            if( titleMgr ) titleMgr.setVariable(this.name,UniEscape(this.value),this.exp)
+            if( titleMgr ) titleMgr.setVariable(this.name,this.value,this.exp)
           }
           else {
             var ca = data.split(';')
@@ -333,8 +779,8 @@ function VarUpdateValue() {
               var c = ca[i];
               if( c.indexOf('=') >= 0 ) {
                 ce = c.split('=')
-                if( this.name == ce[0] ) this.value = UniUnescape(ce[1])
-                if( titleMgr ) titleMgr.setVariable(ce[0],ce[1],this.exp)
+                if( this.name == Decode(ce[0]) ) this.value = Decode(ce[1])
+                if( titleMgr ) titleMgr.setVariable(Decode(ce[0]),Decode(ce[1]),this.exp)
               }
             }
           }
@@ -342,8 +788,7 @@ function VarUpdateValue() {
       }
       else {
         if( titleMgr ) {
-          var vv=new String(titleMgr.getVariable(this.name,UniEscape(this.defVal),this.exp));
-          this.value=UniUnescape(vv);
+          this.value = String(titleMgr.getVariable(this.name,this.defVal,this.exp));
         }
         else this.value = this.defVal
       }
@@ -353,7 +798,7 @@ function VarUpdateValue() {
     this.uDT()
   }
   else {
-    var val = readVariable(this.name,this.defVal,this.exp,this.title)
+    var val = readVariable(this.name,this.defVal,this.exp,this.title, this.bHidden)
     var subval = val ? val.substr( 0, 7 ) : null
     if( subval == "~~f=1~~" ) {
       this.tV = parseInt( val.substr( 7, val.length-7 ), 10 )
@@ -380,7 +825,7 @@ function VarUpdateValue() {
 function VarSave() {
   if(this.cm) {
     var titleMgr = getTitleMgrHandle();
-    if( titleMgr ) titleMgr.setVariable(this.name,UniEscape(this.value),this.exp)
+    if( titleMgr ) titleMgr.setVariable(this.name,this.value,this.exp)
   }
   else if(this.aiccframe){
     var titleMgr = getTitleMgrHandle();
@@ -391,15 +836,15 @@ function VarSave() {
       if( this.name == 'cmi.core.total_time' || this.name == 'cmi.total_time' ) {
         if( this.aiccframe == 'scorm' || this.aiccframe == 'tincan' ) {
           LMSSetValue( 'cmi.core.session_time', lmsVal )
-          if( titleMgr ) titleMgr.setVariable('cmi.core.session_time',UniEscape(this.value),this.exp)
+          if( titleMgr ) titleMgr.setVariable('cmi.core.session_time',this.value,this.exp)
         }
         else {
           LMSSetValue( 'cmi.session_time', lmsVal )
-          if( titleMgr ) titleMgr.setVariable('cmi.session_time',UniEscape(this.value),this.exp)
+          if( titleMgr ) titleMgr.setVariable('cmi.session_time',this.value,this.exp)
         }
       }
       else {
-        if( titleMgr ) titleMgr.setVariable(this.name,UniEscape(this.value),this.exp)
+        if( titleMgr ) titleMgr.setVariable(this.name,this.value,this.exp)
         if( this.aiccgroup ) {
           LMSSetValue( this.name, lmsVal )
           if( this.name == 'cmi.score.raw' ){
@@ -414,24 +859,23 @@ function VarSave() {
           }
         }
         else {
-          var nameEQ = this.name + "="
-          var newData= nameEQ + UniEscape(this.value) + ';'
+          var newData = Encode(this.name) + "=" + Encode(this.value) + ';'
           var bErr = false;
-          var data=new String( LMSGetValue( 'cmi.suspend_data' ) )
+          var data = String( GetSuspendData() )
           if( data != '' ) {
             var ca = data.split(';');
-            var sizeLimit = 4096;
             for(var i=0;i<ca.length;i++) {
               var c = ca[i];
-              if (c != '' && c.indexOf(nameEQ) != 0) {   
+              if (c != '' && c.indexOf(Encode(this.name) + "=") != 0) {   
                 newData = newData + c + ';'
               }
             }
           }
           
-          LMSSetValue( 'cmi.suspend_data', newData )
-          var chkdata=new String( LMSGetValue( 'cmi.suspend_data' ) )
-          if( UniUnescape(chkdata).length < UniUnescape(newData).length ) {
+          SetSuspendData( newData )
+          if(!this.bHidden) trivLogMsg('cmi.suspend_data (unescaped) is now set to [' + Decode(newData) + ']')
+          var chkdata = String( GetSuspendData() )
+          if( chkdata.length < newData.length ) {
             bErr = true;
           }
           
@@ -447,19 +891,19 @@ function VarSave() {
       if(this.aicccore) putParam(this.aiccgroup,this.name+'='+this.value,this.aiccframe)
       else if( this.aiccgroup ) putParam(this.aiccgroup,this.value,this.aiccframe)
       else {
-        if( titleMgr ) titleMgr.setVariable(this.name,UniEscape(this.value),this.exp)
-        saveVariable(this.name,this.value,this.exp,this.title,this.aiccframe)
+        if( titleMgr ) titleMgr.setVariable(this.name,this.value,this.exp)
+        saveVariable(this.name,this.value,this.exp,this.title,this.aiccframe, this.bHidden)
       }
     }
   }
   else{
     if( this.f != 0 && this.tV >= 0 ) {
-      if( this.f == 4 ) saveVariable(this.name,"~~f=4~~"+this.tV+'#'+this.value,this.exp,this.title,this.aiccframe)
-      else if ( this.f == 2 ) saveVariable(this.name,"~~f=2~~"+this.tV+'#'+this.value,this.exp,this.title,this.aiccframe)
-      else if ( this.f == 1 ) saveVariable(this.name,"~~f=1~~"+this.tV+'#'+this.value,this.exp,this.title,this.aiccframe)
+      if( this.f == 4 ) saveVariable(this.name,"~~f=4~~"+this.tV+'#'+this.value,this.exp,this.title,this.aiccframe, this.bHidden)
+      else if ( this.f == 2 ) saveVariable(this.name,"~~f=2~~"+this.tV+'#'+this.value,this.exp,this.title,this.aiccframe, this.bHidden)
+      else if ( this.f == 1 ) saveVariable(this.name,"~~f=1~~"+this.tV+'#'+this.value,this.exp,this.title,this.aiccframe, this.bHidden)
     } 
     this.value = EncodeNull( this.value )
-    saveVariable(this.name,this.value,this.exp,this.title,this.aiccframe)
+    saveVariable(this.name,this.value,this.exp,this.title,this.aiccframe, this.bHidden)
   }
 }
 
@@ -600,8 +1044,7 @@ function VarDiv(divVal) {
     if(!isNaN(this.value)&&!isNaN(divVal)&&!isNaN( parseFloat(divVal))&&!isNaN( parseFloat(this.value)) ) {
       if( parseFloat(divVal) != 0 ) {
         var val=parseFloat(this.value)/parseFloat(divVal)
-        val = parseInt( val*100, 10 )
-        val = parseFloat( val/100 )
+        val = parseFloat( val.toFixed(2) )
         var myVal = this.value.toString();
         divVal = divVal.toString();
         if( divVal.indexOf( "." ) != -1 && myVal.indexOf( "." ) != -1 )
@@ -621,9 +1064,12 @@ function VarCont(strCont) {
   return (result >= 0)
 }
 
-function VarEQ(strEquals) {
+function VarEQ(strTest) {
   this.update()
-  return (this.value == strEquals)
+ 
+  if( !isNaN(strTest) && !isNaN(this.value)) return (parseFloat(this.value) == parseFloat(strTest));
+  else if ( !isNaN(strTest) && isNaN(this.value) && this.value.replace(/,/g,"").trim().length && !isNaN(this.value.replace(/,/g,""))) return (parseFloat(this.value.replace(/,/g,"")) == parseFloat(strTest));
+  else return (this.value == strTest);
 }
 
 function VarLT(strTest) {
@@ -632,8 +1078,9 @@ function VarLT(strTest) {
     if( strTest == "~~~null~~~" || strTest == "" ) return 0
     else return 1
   }
-  if(isNaN(this.value)||isNaN(strTest))return this.value<strTest
-  else return parseFloat(this.value)<parseFloat(strTest)
+  if( !isNaN(strTest) && !isNaN(this.value)) return (parseFloat(this.value) < parseFloat(strTest));
+  else if ( !isNaN(strTest) && isNaN(this.value) && this.value.replace(/,/g,"").trim().length && !isNaN(this.value.replace(/,/g,""))) return (parseFloat(this.value.replace(/,/g,"")) < parseFloat(strTest));
+  else return (this.value < strTest);
 }
 
 function VarGT(strTest) {
@@ -642,14 +1089,15 @@ function VarGT(strTest) {
     if( strTest == "~~~null~~~" || strTest == "" ) return 1
     else return 0
   }
-  if(isNaN(this.value)||isNaN(strTest))return this.value>strTest
-  else return parseFloat(this.value)>parseFloat(strTest)
+  if( !isNaN(strTest) && !isNaN(this.value)) return (parseFloat(this.value) > parseFloat(strTest));
+  else if ( !isNaN(strTest) && isNaN(this.value) && this.value.replace(/,/g,"").trim().length && !isNaN(this.value.replace(/,/g,""))) return (parseFloat(this.value.replace(/,/g,"")) > parseFloat(strTest));
+  else return (this.value > strTest);
 }
 
 function VarUDT() {
   var now = new Date()
   if( this.of == 8 ) {
-    var val = readVariable(this.name,this.defVal,this.exp,this.title)
+    var val = readVariable(this.name,this.defVal,this.exp,this.title, this.bHidden)
     var subval = val ? val.substr( 0, 7 ) : null
     if( subval == "~~f=1~~" ) {
       this.tV = parseInt( val.substr( 7, val.length-7 ), 10 )
@@ -682,7 +1130,7 @@ function VarUDT() {
     // Only the original Elapsed Time variable gets updated
     var dT = 0
     if( this.eTS == null ) {
-      var val = readVariable( this.name, "", this.exp, this.title ) 
+      var val = readVariable( this.name, "", this.exp, this.title, this.bHidden) 
       if( val ) {
         var hours = parseInt( val, 10 )
         var loc   = val.indexOf( ':' )
@@ -757,19 +1205,32 @@ function VarIsCorrFIB(ans,cs,aa) {
   
   var test = val.split("\n");
   var ret = false;
-  for(var i=0;i<test.length;i++) 
-  {
-    var testAns = '"' + test[i] + '"';
-    if( ans.indexOf(testAns) >= 0 )
-    {
-      if( aa )
-        return true;
-      else
-        ret = true;
-    }
-    else if( !aa )
-      return false;
+  
+  if(aa){
+	  for(var i=0;i<test.length;i++) 
+	  {
+		var testAns = '"' + test[i] + '"';
+		if( ans.indexOf(testAns) >= 0 )
+			return true;
+		else
+		  return false;
+	  }
   }
+	else if(!aa){
+		var testAns = ans.split("and");
+		
+		for(index = 0 ; index < testAns.length ; index++){
+			testAns[index] = testAns[index].replace(/"/g, " ").trim();
+		}
+
+		for(var index = 0 ; index < testAns.length ; index++){
+			if( val.indexOf(testAns[index]) >= 0 )
+				ret = true;
+			else
+				return false;
+		}  
+	}
+  
   return ret;
 }
 
@@ -838,7 +1299,7 @@ p.betweenExc = VarBTEX
 
 function saveTestScore( varTestName, score, title, frame ) 
 {
-  saveVariable( varTestName, score, null, title, frame )
+  saveVariable( varTestName, score, null, title, frame)
 }
 
 var titleMgrHandle = null;
@@ -868,7 +1329,7 @@ function getTitleMgr( testWnd, level )
        if( this.frameElement && this.frameElement.id && this.frameElement.id.indexOf('DLG_content') == 0 && parent.parent )
          target = eval( "parent.parent.titlemgrframe" )
        else
-         target = eval( "parent.titlemgrframe" )
+         target = eval( "parent.titlemgrframe" ) 
          
        if( !target )
           target = eval( "testWnd.parent.titlemgrframe" )
@@ -881,7 +1342,7 @@ function getTitleMgr( testWnd, level )
           if( testWnd.name.indexOf( 'Trivantis_Dlg_' ) == 0 )
             return getTitleMgr( testWnd.parent, level+1 )
           else {
-            if( testWnd.name.indexOf( 'Trivantis_' ) == 0 )
+            if( testWnd.name.indexOf( 'Trivantis_' ) == 0 && testWnd.opener )
               return getTitleMgr( testWnd.opener, level+1 )
             else if( level < 2 )
               return getTitleMgr( testWnd.parent, level+1 )
@@ -893,7 +1354,7 @@ function getTitleMgr( testWnd, level )
 }
 
 function readCookie(name,defval) {
-  var nameEQ = name + "="
+  var nameEQ = Encode(name) + "="
   var ca = document.cookie.split(';')
   for(var i=0;i<ca.length;i++) {
     var c = ca[i];
@@ -927,30 +1388,187 @@ function UpdateSCORMTotalTime( currTime ) {
 }
 
 function EncodeNull( chkStr ) {
-    if( chkStr == null ) return "~~~null~~~"
-    else if( String( chkStr ) == "0" ) return 0
-    else if ( chkStr == "" ) return "~~~null~~~"
-    return chkStr
+  if( chkStr == null ) return "~~~null~~~"
+  else if( String( chkStr ) == "0" ) return 0
+  else if ( chkStr == "" ) return "~~~null~~~"
+  return chkStr
 }
 
 function VarBTIN(strLower,strUpper) {
-    this.update()
-    if (this.value == "~~~null~~~" || (this.value == "" && this.value != 0)) {
-        if (strLower == "~~~null~~~" || strLower == "") return 1
-        else if (strUpper == "~~~null~~~" || strUpper == "") return 1
-        else return 0
-    }
-    if (isNaN(this.value) || isNaN(strLower) || isNaN(strUpper)) return (this.value >= strLower && this.value <= strUpper)
-    else return (parseFloat(this.value) >= parseFloat(strLower) && parseFloat(this.value) <= parseFloat(strUpper))
+  this.update()
+  if (this.value == "~~~null~~~" || (this.value == "" && this.value != 0)) {
+    if (strLower == "~~~null~~~" || strLower == "") return 1
+    else if (strUpper == "~~~null~~~" || strUpper == "") return 1
+    else return 0
+  }
+  if (isNaN(this.value) || isNaN(strLower) || isNaN(strUpper)) return (this.value >= strLower && this.value <= strUpper)
+  else return (parseFloat(this.value) >= parseFloat(strLower) && parseFloat(this.value) <= parseFloat(strUpper))
 }
 
 function VarBTEX(strLower, strUpper) {
-    this.update()
-    if (this.value == "~~~null~~~" || (this.value == "" && this.value != 0)) {
-        if (strLower == "~~~null~~~" || strLower == "") return 1
-        else if (strUpper == "~~~null~~~" || strUpper == "") return 1
-        else return 0
+  this.update()
+  if (this.value == "~~~null~~~" || (this.value == "" && this.value != 0)) {
+    if (strLower == "~~~null~~~" || strLower == "") return 1
+    else if (strUpper == "~~~null~~~" || strUpper == "") return 1
+    else return 0
+  }
+  if (isNaN(this.value) || isNaN(strLower) || isNaN(strUpper)) return (this.value > strLower && this.value < strUpper)
+  else return (parseFloat(this.value) > parseFloat(strLower) && parseFloat(this.value) < parseFloat(strUpper))
+}
+
+function GetSuspendData() {
+  var data = String( LMSGetValue( 'cmi.suspend_data' ) )
+  if( data.length > 2 ) {
+    if( data.indexOf(";~;") == 0 )
+      data = data.substring( 3 )
+    else
+      data = NewEncode( data )
+  }
+  return data
+}
+
+function SetSuspendData(data) {
+  LMSSetValue( 'cmi.suspend_data', ";~;" + data )
+}
+
+function NewEncode( data ) {
+  var newData = ""
+  if( data != '' ) {
+    var ca = data.split(';');
+    for(var i=0;i<ca.length;i++) {
+      var c = ca[i];
+      if( c != '' ) {
+        var nv = c.split('=')
+        if( nv.length == 2 )   
+          newData = newData + Encode(nv[0]) + "=" + Encode(UniUnescape(nv[1])) + ";"
+      }
     }
-    if (isNaN(this.value) || isNaN(strLower) || isNaN(strUpper)) return (this.value > strLower && this.value < strUpper)
-    else return (parseFloat(this.value) > parseFloat(strLower) && parseFloat(this.value) < parseFloat(strUpper))
+  }
+  return( newData )
+}
+
+function trivScormQuit(forceClose, titleName, notPageUnload)
+{
+	var trivMainWin = (window.name.indexOf('Trivantis_') == -1);	// LO-2025
+
+	if (notPageUnload)
+		saveVariable( 'TrivantisEPS', 'T'); // Exit Page Status? We set when navigating so we know it's us.
+
+	if ( trivMainWin )
+	{
+		try
+		{
+			// clean up session cookies / variables / transient question answers
+			cleanupTitle(titleName);
+		}
+		finally
+		{
+			// do what we need to do for committing to the LMS
+			doQuit(forceClose);
+		}
+	}
+	else
+		CloseWnd();	// closing popup window
+}
+
+function FormatDS( now ) 
+{
+	var strDate = '';
+	try { strDate = trivstrDateFmt.trim(); } catch (e) { }
+
+	if (strDate.length == 0)
+	    return FormatLocaleDS(now);
+
+	if (strDate.search("M")>-1)
+	{
+		var month = now.getMonth()+1;
+		if (month < 10 && strDate.search("MM")>-1)
+			strDate = strDate.replace( /MM/g, ("0" + String(month)));
+		else 
+			strDate = strDate.replace( /MM/g, String(month));
+		strDate = strDate.replace( /M/g, String(month));
+	}
+
+	if (strDate.search("D")>-1)
+	{
+		var date = now.getDate();
+		if (date < 10 && strDate.search("DD")>-1)
+			strDate = strDate.replace( /DD/g, ("0" + String(date)));
+		else 
+			strDate = strDate.replace( /DD/g, String(date));
+		strDate = strDate.replace( /D/g, String(date));
+	}
+
+	if (strDate.search("Y")>-1)
+	{
+		var year = String(now.getFullYear());
+		strDate = strDate.replace( /YYYY/g, String(year));
+		if (strDate.search("YY")>-1 && year.length >= 4)
+		{
+			year = 	(year.charAt(2) + year.charAt(3));
+			strDate = strDate.replace( /YY/g, String(year));
+		}
+	}
+	return strDate;
+}
+
+function FormatTS( now ) 
+{
+	var strTime = '';
+	try { strTime = trivstrTimeFmt.trim(); } catch (e) { }
+
+	if (strTime.length == 0)
+	    return FormatLocaleTS(now);
+
+	var bPM = false;
+	var bShowAMPM = (strTime.toLowerCase().search("a")>-1);
+
+	if ( strTime.toLowerCase().search("h")>-1 )
+	{
+		var hours24 = now.getHours();
+		bPM = ( hours24>=12 );
+		var hours12 = hours24;
+		if ( hours12>12 )
+			hours12 -= 12;
+		else if (hours12==0 )
+			hours12 = 12;
+		if (hours12 < 10 && strTime.search("hh")>-1)
+			strTime = strTime.replace( /hh/g, ("0" + String(hours12)));
+		else 
+			strTime = strTime.replace( /hh/g, String(hours12));
+		strTime = strTime.replace( /h/g, String(hours12));
+		if (hours24 < 10 && strTime.search("HH")>-1)
+			strTime = strTime.replace( /HH/g, ("0" + String(hours24)));
+		else 
+			strTime = strTime.replace( /HH/g, String(hours24));
+		strTime = strTime.replace( /H/g, String(hours24));
+	}
+
+	if (strTime.search("m")>-1)
+	{
+		var minutes = now.getMinutes();
+		if (minutes < 10 && strTime.search("mm")>-1)
+			strTime = strTime.replace( /mm/g, ("0" + String(minutes)));
+		else 
+			strTime = strTime.replace( /mm/g, String(minutes));
+		strTime = strTime.replace( /m/g, String(minutes));
+	}
+
+	if (strTime.search("s")>-1)
+	{
+		var seconds = now.getSeconds();
+		if (seconds < 10 && strTime.search("ss")>-1)
+			strTime = strTime.replace( /ss/g, ("0" + String(seconds)));
+		else 
+			strTime = strTime.replace( /ss/g, String(seconds));
+		strTime = strTime.replace( /s/g, String(seconds));
+	}
+
+	if ( bShowAMPM )
+	{
+		var strAMPM = (bPM?"PM":"AM");
+		strTime = strTime.replace( /A/g, strAMPM.toUpperCase() );
+		strTime = strTime.replace( /a/g, strAMPM.toLowerCase() );
+	}
+	return strTime;
 }

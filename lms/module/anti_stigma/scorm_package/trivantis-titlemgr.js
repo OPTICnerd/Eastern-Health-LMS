@@ -16,12 +16,12 @@ var MT = 6;
 var DD = 7;
 var IN = 8;
 var HS = 9;
-var LK = 10;
+var OLK = 10;
 var OR = 11;
-var LT = 12;
 var NE = 13;
 var MR = 14;
 //var RS = 15;
+var LK = 16;
 
 var TRN = 0;
 var TRE = 1;
@@ -44,6 +44,7 @@ function JSTitleMgr()
   this.bIntActs = false;
   this.bCM = false;
   this.bIntTxt = false;
+  this.bForceTF = true;
   this.bSCORM = false;
   this.bTinCan = false;
   this.bAICC = false;
@@ -63,6 +64,8 @@ function JSTitleMgr()
   this.strAiccCO = new String( "" );
   this.strCmBase = new String( "" );
   this.strRedir  = new String( "" );
+  
+  this.arFormNameVals = [];
 }
 
 var TMPr=JSTitleMgr.prototype
@@ -258,6 +261,53 @@ TMPr.addVariable = function( vn, dv, nd )
   return dv;
 }
 
+function decryptString(strEncrypted)
+{
+	var strUCEncr = strEncrypted;
+	strUCEncr = strUCEncr.replace(/Z/g,"\\u");
+	strUCEncr = strUCEncr.replace(/z/g,"\\u0");
+	strUCEncr = strUCEncr.replace(/y/g,"\\u00");
+	strUCEncr = strUCEncr.replace(/x/g,"\\u000");
+	strUCEncr = strUCEncr.replace(/w/g,"\\u001");
+	strUCEncr = strUCEncr.replace(/v/g,"\\u002");
+	strUCEncr = strUCEncr.replace(/t/g,"\\u003");
+	strUCEncr = strUCEncr.replace(/s/g,"\\u004");
+	strUCEncr = strUCEncr.replace(/r/g,"\\u005");
+	strUCEncr = strUCEncr.replace(/q/g,"\\u006");
+	strUCEncr = strUCEncr.replace(/p/g,"\\u007");
+	strUCEncr = strUCEncr.replace(/o/g,"\\u008");
+	strUCEncr = strUCEncr.replace(/n/g,"\\u009");
+	strUCEncr = strUCEncr.replace(/m/g,"\\u00A");
+	strUCEncr = strUCEncr.replace(/l/g,"\\u00B");
+	strUCEncr = strUCEncr.replace(/k/g,"\\u00C");
+	strUCEncr = strUCEncr.replace(/j/g,"\\u00D");
+	strUCEncr = strUCEncr.replace(/i/g,"\\u00E");
+	strUCEncr = strUCEncr.replace(/h/g,"\\u00F");
+
+	var strClear = "";	
+	
+	var arUCEncr = strUCEncr.split("\\u");
+	for ( idx=0; idx<arUCEncr.length; idx++ )
+	{
+		var curUChar = arUCEncr[idx];
+		if ( curUChar && curUChar.length>0 ) 
+		{
+			if ( curUChar.length==4 && Number(curUChar) != NaN )
+			{
+				var curUVal = Number('0x'+curUChar);
+				var newChar =  String.fromCharCode(curUVal);
+				strClear += newChar;
+			}
+			else
+				strClear += curUChar;
+		}
+	}
+
+	
+	return strClear;
+	
+}
+
 TMPr.loadTest = function( fn, tn, pn )
 {
   var tIdx = this.getTIdx( tn, 1 );
@@ -283,14 +333,16 @@ TMPr.loadTest = function( fn, tn, pn )
 	} else {
 		nl = httpReq.responseXML.documentElement;
 	}
-    if( !nl && window.ActiveXObject)
-    {
-      nl=new ActiveXObject("Microsoft.XMLDOM")
-      nl.async="false"
-      nl.load(xfn)
+    if (nl) {
+        nl.normalize();
+    } else if (!nl && is.supportActiveX) {
+        nl = new ActiveXObject("Microsoft.XMLDOM")
+        nl.async = "false"
+        nl.load(xfn)
+    } else {
+        trivAlert('LOADTESTERR', tn, 'You must run this content from a web-based server');
+        return;
     }
-    else
-      nl.normalize();
       
     this.arTests[tIdx].strLoadedName = tn;
     this.arTests[tIdx].loadTestFile( nl );
@@ -330,66 +382,6 @@ TMPr.getTIdx = function( tn, add )
   var test = new TrivTest();
   this.arTests.push( test );
   return this.arTests.length - 1;
-}
-
-TMPr.getRemainingTime = function( tn, showHours, showMins, showSecs, countDown ) 
-{ 
-  var tIdx = this.getTIdx( tn, false );
-  var lRemain = 0;
-  var timeSoFar = 0;
-  var lCurr = 0;
-
-  if( tIdx < 0 || !this.arTests[tIdx].bLoaded )
-    return null;
-
-  if( this.arTests[tIdx].lStartTime > 0 )
-  {
-    var now = new Date().getTime();
-
-    lCurr = now - this.arTests[tIdx].lStartTime;
-  }
-
-  lRemain = parseInt((this.arTests[tIdx].iTestTime * 60000 - lCurr - this.arTests[tIdx].lElapsedTime) / 1000, 10);
-
-  if ( !countDown )
-  {
-	timeSoFar = ((this.arTests[tIdx].iTestTime * 60) - lRemain);
-
-	if ( timeSoFar > (this.arTests[tIdx].iTestTime * 60) )
-		return null;
-	lRemain = timeSoFar;
-  }
-  if( lRemain > 0 )
-  {
-    var strRemain;
-    
-    var temp = parseInt(lRemain/3600, 10);
-    lRemain -= temp * 3600;
-    if ( showHours )
-		strRemain = temp + ':';
-    else
-		strRemain = '  ';
-		
-    temp = parseInt(lRemain/60, 10);
-    lRemain -= temp * 60;
-    if ( showMins )
-    {
-        if( temp <= 9 )
-			strRemain += '0';
-	    strRemain += temp;
-    }
-    if ( showSecs )
-    {
-        if ( showMins )
-            strRemain += ':';
-        if( lRemain <= 9 )
-            strRemain += '0';
-        strRemain += lRemain;
-    }		
-    return strRemain;
-  }
-  else
-    return null;
 }
 
 TMPr.startTestTimer = function( tn ) 
@@ -511,17 +503,22 @@ TMPr.cancelTest = function( tn )
   return dest;
 }
 
-TMPr.processTest = function( tn ) 
+TMPr.processTest = function( tn, bSumbit) 
 {
+  bSubmit = (typeof(bSubmit) == 'undefined') ? true : bSubmit;
+  
   var tIdx = this.getTIdx( tn, false );
   var dest;
 
   if( tIdx < 0 || !this.arTests[tIdx].bLoaded )
     return null;
 
+  // hack: set this global here because I want to use it in xAPI where we handle interaction data
+  strTestName = this.arTests[tIdx].strTestName;
+
   this.stopTestTimer( tn );
   this.arTests[tIdx].GradeTest( this.arVars );
-  this.arTests[tIdx].strTestResult = this.arTests[tIdx].ProcessTest( this.bCM, this.strCmBase, this.strAiccSN, this.strAiccST, this.strAiccEM, this.strAiccCO, this.arVars );
+  this.arTests[tIdx].strTestResult = this.arTests[tIdx].ProcessTest( this.bCM, this.strCmBase, this.strAiccSN, this.strAiccST, this.strAiccEM, this.strAiccCO, this.arVars, bSumbit );
 
   if( this.arTests[tIdx].strTestResult.indexOf( '#' ) == 0 )
   {
@@ -570,7 +567,7 @@ TMPr.processTest = function( tn )
       SID = "";
 
     var intStr = new TrivStr("");
-    this.arTests[tIdx].HandleInteractions( intStr, CID, SID, LID, this.scVers, this.bIntTxt, this.bAddTimeStamp );
+    this.arTests[tIdx].HandleInteractions( intStr, CID, SID, LID, this.scVers, this.bIntTxt, this.bAddTimeStamp, this.bForceTF );
     if( this.bAICC )
       this.PutInteractions( intStr.str );
   }
@@ -717,7 +714,7 @@ TrivStr.prototype.addparm = function( parm, val, noEnc )
   if( noEnc )
     this.str += parm + "=" + val;
   else
-    this.str += HtmlEscape(parm) + "=" + HtmlEscape(val);
+    this.str += encodeURI(parm) + "=" + encodeURI(val);
   this.count++;
 }
 
@@ -761,6 +758,9 @@ function TrivTest()
   this.strFailPage = "";
   this.strPassPage = "";
   this.strPrevPage = "";
+  this.bGDocs = 0;
+  this.bEmail = 0;
+  this.strSubject = "";
   this.strAllowedTM = "";
   this.strElapsedTM = "";
   this.strTestSubmit = "";
@@ -771,6 +771,7 @@ function TrivTest()
   this.arSections = new Array();
   this.arRTPages = new Array();
   this.strStudentRes = "";
+  this.bIsNewGDocURL = false;
 }
 
 var TTPr=TrivTest.prototype
@@ -794,6 +795,9 @@ TTPr.loadTestFile = function( nl )
   this.strPassPage = getNVStr( nl, 'passdone', this.strPassPage );
   this.strPrevPage = getNVStr( nl, 'prevpage', this.strPrevPage );
   this.bGDocs = getNVInt( nl, 'gdocs', this.bGDocs );
+  this.bEmail = getNVInt( nl, 'email', this.bEmail );
+  this.strSubject = getNVStr( nl, 'subject', this.strSubject );
+  
   var arEle = nl.getElementsByTagName('section');
   var i, j, k;
   
@@ -839,9 +843,12 @@ TTPr.LoadPages = function()
       for( i = 0; i < this.arSections.length; i++ )
         this.arSections[i].LoadPages( this.arWork, false );
 
-      for( i = 0; i < this.arLoadedPages.length; i++ )    
-        this.arWork.push( this.arLoadedPages[i] );
-    
+      for( i = 0; i < this.arLoadedPages.length; i++ )
+	  {
+	    if(!this.arLoadedPages[i].bHasResults)
+			this.arWork[i] = this.arLoadedPages[i];
+      }
+	
       if( this.iNumberRandom > this.arWork.length ) this.iNumberRandom = this.arWork.length;
     }    
     
@@ -968,7 +975,7 @@ TTPr.GradeTestSection = function( arVars, sect )
   if( bCanScore )
   {
     if( maxScore > 0 )
-      sectScore = parseInt(testScore * 100 / maxScore, 10);
+      sectScore = parseInt(testScore * 100 / maxScore + 0.5, 10);
     else
       sectScore = 100;
   }
@@ -978,8 +985,41 @@ TTPr.GradeTestSection = function( arVars, sect )
   return sectScore;
 }
 
-TTPr.ProcessTest = function( bCM, strCMBase, us, id, em, cid, arVars ) 
+TMPr.addFormElement = function( nm, vl )
+{
+	this.arFormNameVals.push( [nm,vl] );
+};
+
+
+TMPr.emailForm = function( us, subj, inc, xml )
+{
+	strRes = ""
+	if( xml ) strRes += "<lectoravariables>\r\n";
+	
+	for( var i=0; i<this.arFormNameVals.length; i++ )
+	{
+		if( xml )
+		{
+			strRes += "  <variable>\r\n";
+			strRes += "    <variablename>" + this.arFormNameVals[i][0]  + "</variablename>\r\n";
+			strRes += "    <variablevalue>" + this.arFormNameVals[i][1]  + "</variablevalue>\r\n";
+			strRes += "  </variable>\r\n";
+		}
+		else
+		{
+			strRes += this.arFormNameVals[i][0] + ' = ' + this.arFormNameVals[i][1] + '\r\n';
+		}
+	}
+	if( xml ) strRes += "</lectoravariables>";
+	
+	var resEmail = "mailto:" + us + "?subject=" + encodeURIComponent(subj) + "&body=" + encodeURIComponent(strRes);
+	try{app.openFile(resEmail);}catch(e){};
+};
+
+TTPr.ProcessTest = function( bCM, strCMBase, us, id, em, cid, arVars, bSubmit ) 
 { 
+  bSubmit = (typeof(bSubmit) == 'undefined') ? true : bSubmit;	
+
   var strDest = null;
   var bSuccess = true;
   var secs;
@@ -1035,7 +1075,7 @@ TTPr.ProcessTest = function( bCM, strCMBase, us, id, em, cid, arVars )
   window.resWind = null
   if( this.iShowRes )
   {
-    this.strStudentRes = this.CreateTextResults( UniUnescape(us), arVars );
+    this.strStudentRes = this.CreateTextResults( us, arVars );
   }
   
   if( bCM )
@@ -1099,52 +1139,81 @@ TTPr.ProcessTest = function( bCM, strCMBase, us, id, em, cid, arVars )
   
   // Determine if a variable macro
   strDest = this.getVariableMacroValue( this.strResults, arVars );
+  this.bIsNewGDocURL = this.bGDocs && parseKeyFromGDocURL( strDest ) == null;
 
-  if( bSuccess && strDest != null )
+  if( bSuccess && strDest != null && bSubmit )
   {
     if ( strDest != null && strDest.length > 0 )
     {
       var pl = new TrivStr("")
       if( this.bGDocs )
 	  {
-		var i=strDest.indexOf("key=");
-		if(i>=0){
-			var str=strDest.substr(i+4);
-			i=str.indexOf('#');
-			if(i>=0)
-				str=str.substr(0,i);
-			pl.addparm( "key", str );
-		}else{
-			i=strDest.indexOf("formKey=");
-			if(i>=0){
+	    if( us )
+		{
+		  if( this.bIsNewGDocURL ) {
+		    pl.addparm( 'entry_1'+padDigits(pl.count,6), us );
+		  } else {
+		    var i=strDest.indexOf("key=");
+		    if(i>=0){
+			  var str=strDest.substr(i+4);
+			  i=str.indexOf('#');
+			  if(i>=0)
+			    str=str.substr(0,i);
+			  pl.addparm( "key", str );
+		    }else{
+			  i=strDest.indexOf("formKey=");
+			  if(i>=0){
 				var str=strDest.substr(i+8);
 				i=str.indexOf('#');
 				if(i>=0)
-					str=str.substr(0,i);
+				  str=str.substr(0,i);
 				pl.addparm( "formKey", str );
+			  }
 			}
-		}
-		strDest="https://spreadsheets.google.com/formResponse";
+		  }
+		} 
 	  }
-      if( this.bGDocs ) pl.addparm( 'entry.'+(pl.count-1)+'.single', UniUnescape(us) );
-	  else pl.addparm( "name", UniUnescape(us) );
+	  else pl.addparm( "name", us );
       this.CreateCGIResults( pl, arVars, false, this.bGDocs );
       pl.str = pl.str.replace(/\+/g, '%2B');
 
 	  if( this.bGDocs ){
-	    if( is.ie ){
+	    strDest = this.bIsNewGDocURL?strDest:"https://spreadsheets.google.com/formResponse";
+	    if( !this.bIsNewGDocURL && is.ie ){
 			var request = strDest + '?' + pl.str;
 			var head = document.getElementsByTagName("head").item(0);
 			var script = document.createElement("script");
 			script.setAttribute("type", "text/javascript");
 			script.setAttribute("src", request);
 			head.appendChild(script);
-		}else
-			getHTTP( strDest, 'GET', pl.str );
+		    bSuccess = true;
+		}else {
+			var httpReq = getHTTP( strDest, (this.bIsNewGDocURL?'POST':'GET'), pl.str, is.ie ? DOMException.NETWORK_ERR : null );
+            bSuccess = (httpReq.status == 200 || httpReq.status == 0);
+        }
 		this.strTestSubmit = '';
-		bSuccess = true;
-	  }else{
-	    var httpReq = getHTTP( strDest, 'POST', pl.str );
+	  }
+	  else if( this.bEmail )
+	  {
+		var strVariablesRes = "";
+		if( this.bIncVar )
+		{
+			strVariablesRes += "\r\n\r\n";
+			strVariablesRes += "Vars:\r\n\r\n";
+			var submitValue = "";
+			var submitName = "";
+			for( idx = 0; idx < arVars.length; idx++ ) {
+				if ((submitValue = this.getVariableSubmitValue( idx, arVars )) == "~~~null~~~") 
+					submitValue = trivstrNA;
+				submitName = this.getVariableSubmitName( idx, arVars );
+				strVariablesRes += submitName + " = " + submitValue + "\r\n";
+			}
+		}
+		var resEmail = "mailto:" + strDest + "?subject=" + encodeURIComponent(this.strSubject) + "&body=" + encodeURIComponent(this.CreateTextResults(us, arVars, true) ) + encodeURIComponent(strVariablesRes);
+		try{app.openFile(resEmail);}catch(e){}
+	  }
+	  else{
+	    var httpReq = getHTTP( strDest, ((this.bModeGet)?'GET':'POST'), pl.str );
         bSuccess = (httpReq.status == 200);
         this.strTestSubmit = httpReq.responseText;
 	  }
@@ -1164,7 +1233,15 @@ TTPr.ProcessTest = function( bCM, strCMBase, us, id, em, cid, arVars )
             alert( subTxt );
         }
         else
-          trivAlert( 'SUBERR', this.strLoadedName, subTxt );
+        {
+          var fn = null;
+          if ( window.trivActFBCnt != 'undefined' && window.trivActFBCnt != null )
+          { 
+            window.trivActFBCnt++;
+            fn =(function(){ window.trivActFBCnt--;});
+          }
+          trivAlert( 'SUBERR', this.strLoadedName, subTxt, fn );
+        }
       }
     }
   }
@@ -1175,35 +1252,41 @@ TTPr.ProcessTest = function( bCM, strCMBase, us, id, em, cid, arVars )
     return this.strFailPage;
 }
 
-TTPr.CreateTextResults = function( us, arVars ) 
+TTPr.CreateTextResults = function( us, arVars, bEm ) 
 { 
   var idx;
   var qNum = 0;
   var txtRes = new TrivStr("")
   
-  txtRes.add( this.strTestName + "<br /><br />");
+  var lineBreak = "<br />";
+	
+  if( typeof(bEm) != "undefined" && bEm )
+	lineBreak = "\r\n";
+  
+  txtRes.add( this.strTestName + lineBreak + lineBreak);
 
   if( us != null && us.length > 0 )
-    txtRes.add( trivstrSTUD + us + "<br /><br />" );
+    txtRes.add( trivstrSTUD + us + lineBreak + lineBreak );
 
   if( this.iStudScore != -1 && this.bAutoG )
   {
-    txtRes.add( trivstrSCORE + this.iStudScore + "%<br />" );
+    txtRes.add( trivstrSCORE + this.iStudScore + "%" + lineBreak);
     if( this.iStudScore >= this.iPassGrade )
       txtRes.add( trivstrPASS );
     else
       txtRes.add( trivstrFAIL );
-    txtRes.add( "<br /><br />" );
+    txtRes.add( lineBreak + lineBreak );
   }
 
   if( this.bShowScOnly == 0 )
   {
     for( idx = 0; idx < this.arRTPages.length; idx++ )
-      qNum = this.arRTPages[idx].createTextResults( txtRes, qNum, this.bAutoG );
+      qNum = this.arRTPages[idx].createTextResults( txtRes, qNum, this.bAutoG, bEm );
   }
   
   return txtRes.str;
 }
+
 
 TTPr.CreateCGIResults = function( pl, arVars, bCM, bGD ) 
 { 
@@ -1232,7 +1315,7 @@ TTPr.CreateCGIResults = function( pl, arVars, bCM, bGD )
   }
   for( idx = 0; idx < this.arRTPages.length; idx++ )
   {
-    qNum = this.arRTPages[idx].createCGIResults( pl, qNum, bGD );
+    qNum = this.arRTPages[idx].createCGIResults( pl, qNum, bGD, this.bIsNewGDocURL );
 
     if( svSID != this.arRTPages[idx].iSectionId )
     {
@@ -1287,7 +1370,9 @@ TTPr.CreateCGIResults = function( pl, arVars, bCM, bGD )
 
   if( this.iStudScore != -1 && this.bAutoG )
   {
-    if( bGD ) pl.addparm( 'entry.'+(pl.count-1)+'.single', this.iStudScore );
+    if( bGD )
+	  if ( this.bIsNewGDocURL ) pl.addparm( 'entry_1'+padDigits(pl.count,6), this.iStudScore );
+	  else pl.addparm( 'entry.'+(pl.count-1)+'.single', this.iStudScore );
 	else pl.addparm( "Score", this.iStudScore );
   }
   else if( bCM )
@@ -1541,11 +1626,17 @@ function TrivTestPage()
   this.name = "";
   this.iSectionId = UNK;
   this.arQues = new Array();
+  this.bHasResults = false;
 }
 
 var TPPr=TrivTestPage.prototype
 TPPr.load = function( sid, nl )
 {
+  //Check if the page contains a results object
+  var attr = nl.getAttribute("hasResults");
+  if(attr == "true")
+       this.bHasResults = true;
+
   this.iSectionId = sid;
   this.index = getNVInt( nl, 'index', this.index );
   this.name = getNVStr( nl, 'name', this.name );
@@ -1576,7 +1667,7 @@ TPPr.getQuestionList = function()
       for( subidx = 0; subidx < this.arQues[idx].arCorrAns.length; subidx++ )
         ql += this.arQues[idx].id + '-' + (subidx+1) + ';';
     }
-    else if( (this.arQues[idx].type == MC || this.arQues[idx].type == HS) && this.arQues[idx].bGradeInd )
+    else if( (this.arQues[idx].type == MC || this.arQues[idx].type == MR || this.arQues[idx].type == HS) && this.arQues[idx].bGradeInd )
     {
       var subidx;
       for( subidx = 0; subidx < this.arQues[idx].arChoices.length; subidx++ )
@@ -1631,10 +1722,10 @@ TPPr.getNumCorrectMCQs = function()
   return numC;
 }
 
-TPPr.createTextResults = function( txtRes, bQN, bAG )
+TPPr.createTextResults = function( txtRes, bQN, bAG, bEm )
 {
   for( var idx = 0; idx < this.arQues.length; idx++ )
-    bQN = this.arQues[idx].createTextResults( txtRes, bQN, bAG );
+    bQN = this.arQues[idx].createTextResults( txtRes, bQN, bAG, bEm );
     
   return bQN;
 }
@@ -1667,7 +1758,7 @@ TPPr.isScoreable = function()
   return true;
 }
 
-TPPr.createCGIResults = function( pl, bQN, bGD )
+TPPr.createCGIResults = function( pl, bQN, bGD, bIsNewGDocURL )
 {
   var idx;
   var subidx;
@@ -1675,7 +1766,7 @@ TPPr.createCGIResults = function( pl, bQN, bGD )
   var strTemp;
 
   for( idx = 0; idx < this.arQues.length; idx++ )
-    bQN = this.arQues[idx].createCGIResults( pl, bQN, bGD );
+    bQN = this.arQues[idx].createCGIResults( pl, bQN, bGD, bIsNewGDocURL );
   
   return bQN;
 }
@@ -1692,8 +1783,12 @@ function TrivQuestion()
   this.corrAns = "";
   this.arCorrAns = new Array();
   this.arChoices = new Array();
+  this.arStmts = new Array();
+  this.arStmtNms = new Array();
   this.arAddedInfo = new Array();
   this.choices = "";
+  this.stmts = "";
+  this.stmtnms = "";
   this.bAllowMult = 0;
   this.bPersist = 0;
   this.bGradeInd = 0;
@@ -1715,11 +1810,13 @@ TQPr.load = function (sid, nl) {
     this.name = getNVStr(nl, 'name', this.name);
     this.varName = getNVStr(nl, 'var', this.varName);
     this.text = getNVStr(nl, 'text', this.text);
-    this.corrAns = getNVStr(nl, 'correctans', this.corrAns);
+    this.corrAns = decryptString( getNVStr(nl, 'correctans', this.corrAns) );
     this.bAnyAnswer = getNVInt(nl, 'anyanswer', this.bAnyAnswer);
     this.bCaseSensitive = getNVInt(nl, 'casesensitive', this.bCaseSensitive);
     this.separator = getNVStr(nl, 'separator', this.separator);
-    if (this.type == DD || this.type == MT || this.type == MC || this.type == HS || this.type == MR) {
+	this.corrFeedback = getNVStr(nl, 'correctfeedback', this.corrFeedback);
+	this.incorrFeedback = getNVStr(nl, 'incorrectfeedback', this.incorrFeedback);
+    if (this.type == DD || this.type == MT || this.type == MC || this.type == HS || this.type == MR || this.type == OR) {
         var pos1 = 0
         var pos2 = this.corrAns.indexOf(',')
         while (pos2 != -1) 
@@ -1777,6 +1874,31 @@ TQPr.load = function (sid, nl) {
         }
         this.arChoices.push(this.choices.substring(pos1, this.choices.length))
     }
+    if (this.type == LK) 
+    {
+        this.stmts = getNVStr(nl, 'statements', this.stmts);
+
+        var pos1 = 0
+        var pos2 = this.stmts.indexOf('|')
+        while (pos2 != -1) 
+        {
+            this.arStmts.push(this.stmts.substring(pos1, pos2))
+            pos1 = pos2 + 1
+            pos2 = this.stmts.indexOf('|', pos1)
+        }
+        this.arStmts.push(this.stmts.substring(pos1, this.stmts.length))
+        
+        this.stmtnms = getNVStr(nl, 'statementnames', this.stmts);
+
+        pos1 = 0
+        pos2 = this.stmtnms.indexOf('|')
+        while (pos2 != -1) {
+            this.arStmtNms.push(this.stmtnms.substring(pos1, pos2))
+            pos1 = pos2 + 1
+            pos2 = this.stmtnms.indexOf('|', pos1)
+        }
+        this.arStmtNms.push(this.stmtnms.substring(pos1, this.stmtnms.length))
+    }
     var ai = getNVStr(nl, 'addedinfo', null);
     if( ai )
     {
@@ -1804,7 +1926,9 @@ TQPr.getMaxScore = function()
   {
     if( this.bGradeInd )
     {
-      if( this.arCorrAns.length > 0 )
+      if (this.type == MR || this.type == HS || this.type == MC)
+        ourMax = this.arChoices.length;
+      else if( this.arCorrAns.length > 0 )
         ourMax = this.arCorrAns.length;
       else
       {
@@ -1839,7 +1963,7 @@ TQPr.isScoreable = function()
 {
   if( !this.bSurvey )
   {
-    if( this.type == SA || this.type == ES )
+    if( this.type == SA || this.type == ES || this.type == LK )
     {
       if( this.weight > 0 )
         return false;
@@ -1860,7 +1984,6 @@ TQPr.isCorrect = function()
     switch( this.type )
     {
         case TF:
-        case OR:
         if( this.strOurAns == this.corrAns )
           return 1;
         break;
@@ -1868,19 +1991,34 @@ TQPr.isCorrect = function()
       case MC:
       case HS:
       case MR:
+      case OR:
         if( this.bGradeInd )
         {
-          var tmpOurAns = ',' + this.strOurAns + ',';
-          var tmpCorrAns = ',' + this.corrAns + ',';
           var bSel, bCorr;
           var iNumCorr = 0;
           
           for( var i=0; i<this.arChoices.length; i++ )
-          {
-            bSel = IsChoiceSelected( this.arChoices[i], this.strOurAns );
-            if( tmpCorrAns.indexOf( ',' + this.arChoices[i] + ',' ) >= 0 ) bCorr = true; else bCorr = false;
-            if( ( bCorr && bSel ) || ( !bCorr && !bSel ) )
-              iNumCorr++;
+          {            
+            var strChoice = this.arChoices[i].replace(/,/g,"&#44");
+            if( this.type == OR ){
+              var indObj = {i:-1};
+              bSel = IsChoiceSelected( strChoice, this.strOurAns, indObj );
+              if( this.isCorrectSub(strChoice,indObj) > 0)
+                bCorr = true;
+              else 
+                bCorr = false;
+              if( ( bCorr && bSel ) )
+                iNumCorr++;
+            }
+            else{
+              bSel = IsChoiceSelected( strChoice, this.strOurAns );
+              if( this.isCorrectSub(strChoice) > 0)
+                bCorr = true;
+              else 
+                bCorr = false;
+              if( ( bCorr && bSel ) || ( !bCorr && !bSel ) )
+                iNumCorr++;
+            }
           }
           return iNumCorr;
         }
@@ -1896,30 +2034,30 @@ TQPr.isCorrect = function()
         var strTemp;
         var oAns;
         var brc = 0;
-        if (!this.bCaseSensitive) oAns = this.strOurAns.toString().toLowerCase();
-        else oAns = this.strOurAns.toString();
+        if (!this.bCaseSensitive) oAns = this.strOurAns.toString().toLowerCase().trim();
+        else oAns = this.strOurAns.toString().trim();
 
         for (var i = 0; i < this.arCorrAns.length; i++) {
-            if (!this.bCaseSensitive) strTemp = this.arCorrAns[i].toLowerCase();
-            else strTemp = this.arCorrAns[i];
+            if (!this.bCaseSensitive) strTemp = this.arCorrAns[i].toLowerCase().trim();
+            else strTemp = this.arCorrAns[i].trim();
             if (this.bAnyAnswer) { if (oAns == strTemp) return 1; }
             else { if (oAns.indexOf(strTemp) == -1) return 0; else brc = 1; }
         }
         return brc;
         break;
     case NE:
-        var oAns = parseInt(this.strOurAns);
+        var oAns = parseFloat(this.strOurAns.replace(/,/g,""));
         var brc = 0;
         for (var i = 0; i < this.arRel.length; i++) {
             switch (parseInt(this.arRel[i])) {
-                case EQU: if (oAns == parseInt(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
-                case BT_INC: if (oAns >= parseInt(this.arCorrAns[i]) && oAns <= parseInt(this.arCorrAns[i + 1])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
-                case BT_EXC: if (oAns > parseInt(this.arCorrAns[i]) && oAns < parseInt(this.arCorrAns[i + 1])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
-                case GRT: if (oAns > parseInt(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
-                case GTE: if (oAns >= parseInt(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
-                case LST: if (oAns < parseInt(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
-                case LSTE: if (oAns <= parseInt(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
-                case NEQU: if (oAns != parseInt(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case EQU: if (oAns == parseFloat(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case BT_INC: if (oAns >= parseFloat(this.arCorrAns[i]) && i <= this.arRel.length-1 && oAns <= parseFloat(this.arCorrAns[++i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case BT_EXC: if (oAns > parseFloat(this.arCorrAns[i]) && i <= this.arRel.length-1 && oAns < parseFloat(this.arCorrAns[++i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case GRT: if (oAns > parseFloat(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case GTE: if (oAns >= parseFloat(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case LST: if (oAns < parseFloat(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case LSTE: if (oAns <= parseFloat(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
+                case NEQU: if (oAns != parseFloat(this.arCorrAns[i])) { if (this.bAnyAnswer) return 1; else brc = 1; } else { brc = 0; } break;
             }
             if( this.separator == 'and' && !brc )
               break;
@@ -1960,6 +2098,8 @@ TQPr.isCorrect = function()
 		  for( var j=0; j<possibleCorr.length && !bFound; j++ )
 		  {
 		    var tmpAns = possibleCorr[j];
+			if ( tmpAns[tmpAns.length-1] != ',' )
+				tmpAns += ',';
 			if( tmpOurAns.indexOf( tmpAns ) != -1 )
 			  bFound = true;
 		  }
@@ -2007,23 +2147,31 @@ function GetMatchingPairStr( strQNum, inp )
   return strPair;
 }
 
-function IsChoiceSelected( strCho, inp )
+function IsChoiceSelected( strCho, inp, indObj )
 {
-  var strFormat = ",";
-  var strTemp   = ",";
-  var loc;
-
-  strTemp += inp + ",";
-  strFormat += strCho + ",";
-
-  loc = strTemp.indexOf( strFormat );
-  if( loc < 0 )
+  var spl = inp.split(',');
+  var i;
+  for( i=0; i<spl.length; i++ )
+  {
+	if( spl[i]==strCho )
+	  break;	
+  }
+  
+  if( indObj )
+  {
+	if( i<spl.length )
+		indObj.i = i;
+	else
+		indObj.i = -1;
+  }
+	
+  if( i >= spl.length )
     return false;
 
   return true;
 }
 
-TQPr.isCorrectSub = function( oc )
+TQPr.isCorrectSub = function( oc, indObj )
 {
   if( !this.bSurvey )
   {
@@ -2032,7 +2180,18 @@ TQPr.isCorrectSub = function( oc )
        for( var i=0; i<this.arCorrAns.length; i++ )
        {
          if( oc == this.arCorrAns[i] )
-           return 1;
+         {
+           if( indObj )
+           {
+			 indObj.correcti=i;
+             if( indObj.i == i )
+               return 1;
+             else
+               return 0;
+           }
+           else
+             return 1;
+         }
        }
     }
   }
@@ -2113,7 +2272,7 @@ TQPr.gradeQs = function( arVars )
 {
   var idx;
 
-  this.strOurAns = null;
+  this.strOurAns = "";
   this.iOurScore = 0;
 
   if( this.type != UNK )
@@ -2122,7 +2281,7 @@ TQPr.gradeQs = function( arVars )
     {
       if( arVars[idx].vn == this.varName )
       {
-        this.strOurAns = UniUnescape( arVars[idx].vv );
+        this.strOurAns = arVars[idx].vv;
         break;
       }
     }
@@ -2135,21 +2294,25 @@ TQPr.gradeQs = function( arVars )
   }
 }
 
-TQPr.createTextResults = function (txtRes, bQN, bAG) {
+
+TQPr.createTextResults = function (txtRes, bQN, bAG, bEm) {
     var subidx;
     var strTemp;
+    var lineBreak = "<br />";
+	
+    if( typeof(bEm) != "undefined" && bEm )
+        lineBreak = "\r\n";
 
     if (this.type != UNK) {
         bQN++;
 
-        txtRes.add(trivstrQ + bQN + "<br />" + this.text + "<br />");
+        txtRes.add(trivstrQ + bQN + lineBreak + this.text + lineBreak);
         switch (this.type) {
             case TF:
             case MC:
             case HS:
             case LK:
             case OR:
-            case LT:
             case MR:
                 if (bAG && !this.bSurvey) {
                     if (this.bGradeInd) {
@@ -2157,28 +2320,48 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                         var strChoice;
                         for (subidx = 0; subidx < this.arChoices.length; subidx++) {
                             strChoice = this.arChoices[subidx];
-                            bSel = IsChoiceSelected(strChoice, this.strOurAns);
-                            if (this.isCorrectSub(strChoice) > 0) {
-                                if (bSel)
-                                    txtRes.add(trivstrYACS + strChoice + "<br />");
-                                else
-                                    txtRes.add(trivstrYAINS + strChoice + "<br />");
-                            }
-                            else {
-                                if (bSel)
-                                    txtRes.add(trivstrYAIS + strChoice + "<br />");
-                                else
-                                    txtRes.add(trivstrYACNS + strChoice + "<br />");
-                            }
+                            if( this.type==OR )
+							{
+								var indObj = { i:-1, correcti:-1};
+								bSel = IsChoiceSelected(strChoice.replace(/,/g,"&#44"), this.strOurAns, indObj);
+								if ( this.isCorrectSub(strChoice.replace(/,/g,"&#44"),indObj) > 0) {
+									txtRes.add(trivstrYAC + strChoice + "=" + (indObj.i+1).toString() + lineBreak);
+								}
+								else {
+									txtRes.add(trivstrYA);
+									if (!bSel)
+										txtRes.add(trivstrNA);
+									else
+										txtRes.add(strChoice + "=" + (indObj.i+1).toString() );
+
+									txtRes.add(lineBreak + trivstrCA + (indObj.correcti+1).toString() + lineBreak);
+								}
+							}
+							else
+							{
+								bSel = IsChoiceSelected(strChoice.replace(/,/g,"&#44"), this.strOurAns);
+								if ( this.isCorrectSub(strChoice.replace(/,/g,"&#44")) > 0 ) {
+									if (bSel)
+										txtRes.add(trivstrYACS + strChoice + lineBreak);
+									else
+										txtRes.add(trivstrYAINS + strChoice + lineBreak);
+								}
+								else {
+									if (bSel)
+										txtRes.add(trivstrYAIS + strChoice + lineBreak);
+									else
+										txtRes.add(trivstrYACNS + strChoice + lineBreak);
+								}
+							}
                             if (subidx < this.arChoices.length - 1) {
                                 bQN++;
-                                txtRes.add("<br />" + trivstrQ + bQN + "<br />" + this.text + "<br />");
+                                txtRes.add(lineBreak + trivstrQ + bQN + lineBreak + this.text + lineBreak);
                             }
                         }
                     }
                     else {
                         if (this.isCorrect() > 0)
-                            txtRes.add(trivstrYAC + this.strOurAns + "<br />");
+                            txtRes.add(trivstrYAC + this.strOurAns + lineBreak);
                         else {
                             txtRes.add(trivstrYA);
                             if (this.strOurAns == null || this.strOurAns.length == 0 || this.strOurAns == "~~~null~~~")
@@ -2186,7 +2369,7 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                             else
                                 txtRes.add(this.strOurAns);
 
-                            txtRes.add("<br />" + trivstrCA + this.corrAns + "<br />");
+                            txtRes.add(lineBreak + trivstrCA + this.corrAns + lineBreak);
                         }
                     }
                 }
@@ -2196,14 +2379,14 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                         txtRes.add(trivstrNA);
                     else
                         txtRes.add(this.strOurAns);
-                    txtRes.add("<br />");
+                    txtRes.add(lineBreak);
                 }
                 break;
 
             case FB:
                 if (bAG && !this.bSurvey) {
                     if (this.isCorrect() > 0)
-                        txtRes.add(trivstrYAC + this.strOurAns + "<br />");
+                        txtRes.add(trivstrYAC + this.strOurAns + lineBreak);
                     else 
                     {
                         var sepRep;
@@ -2218,7 +2401,7 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                             txtRes.add(trivstrNA);
                         else
                             txtRes.add(this.strOurAns);
-                        txtRes.add("<br />" + trivstrCA + strTemp + "<br />");
+                        txtRes.add(lineBreak + trivstrCA + strTemp + lineBreak);
                     }
                 }
                 else {
@@ -2227,13 +2410,13 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                         txtRes.add(trivstrNA);
                     else
                         txtRes.add(this.strOurAns);
-                    txtRes.add("<br />");
+                    txtRes.add(lineBreak);
                 }
                 break;
             case NE:
                 if (bAG && !this.bSurvey) {
                     if (this.isCorrect() > 0)
-                        txtRes.add(trivstrYAC + this.strOurAns + "<br />");
+                        txtRes.add(trivstrYAC + this.strOurAns + lineBreak);
                     else {
                         strTemp = this.getNEResult();
 
@@ -2242,7 +2425,7 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                             txtRes.add(trivstrNA);
                         else
                             txtRes.add(this.strOurAns);
-                        txtRes.add("<br />" + trivstrCA + strTemp + "<br />");
+                        txtRes.add(lineBreak + trivstrCA + strTemp + lineBreak);
                     }
                 }
                 else {
@@ -2251,7 +2434,7 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                         txtRes.add(trivstrNA);
                     else
                         txtRes.add(this.strOurAns);
-                    txtRes.add("<br />");
+                    txtRes.add(lineBreak);
                 }
                 break;
 
@@ -2262,7 +2445,7 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                     txtRes.add(trivstrNA);
                 else
                     txtRes.add(this.strOurAns);
-                txtRes.add("<br />");
+                txtRes.add(lineBreak);
                 break;
 
             case DD:
@@ -2276,7 +2459,7 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                                 strTemp = GetMatchingPairStr(strQNum, this.strOurAns);
 
                                 if (this.isCorrectSub(strTemp) > 0)
-                                    txtRes.add(trivstrYAC + strTemp + "<br />");
+                                    txtRes.add(trivstrYAC + strTemp + lineBreak);
                                 else {
                                     txtRes.add(trivstrYA);
                                     if (strTemp == null || strTemp.length == 0)
@@ -2284,18 +2467,18 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                                     else
                                         txtRes.add(strTemp);
 
-                                    txtRes.add("<br />" + trivstrCA + this.arCorrAns[subidx] + "<br />");
+                                    txtRes.add(lineBreak + trivstrCA + this.arCorrAns[subidx] + lineBreak);
                                 }
 
                                 if (subidx < this.arCorrAns.length - 1) {
                                     bQN++;
-                                    txtRes.add("<br />" + trivstrQ + bQN + "<br />" + this.text + "<br />");
+                                    txtRes.add(lineBreak + trivstrQ + bQN + lineBreak + this.text + lineBreak);
                                 }
                             }
                         }
                         else {
                             if (this.isCorrect() > 0)
-                                txtRes.add(trivstrYAC + this.corrAns + "<br />");
+                                txtRes.add(trivstrYAC + this.corrAns + lineBreak);
                             else {
                                 txtRes.add(trivstrYA);
                                 if (this.strOurAns == null || this.strOurAns.length == 0 || this.strOurAns == "~~~null~~~")
@@ -2315,7 +2498,7 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                                     }
                                 }
 
-                                txtRes.add("<br />" + trivstrCA + this.corrAns + "<br />");
+                                txtRes.add(lineBreak + trivstrCA + this.corrAns + lineBreak);
                             }
                         }
                     }
@@ -2330,11 +2513,11 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                                     txtRes.add(trivstrNA);
                                 else
                                     txtRes.add(strTemp);
-                                txtRes.add("<br />");
+                                txtRes.add(lineBreak);
 
                                 if (subidx < this.arCorrAns.length - 1) {
                                     bQN++;
-                                    txtRes.add("<br />" + trivstrQ + bQN + "<br />" + this.text + "<br />");
+                                    txtRes.add(lineBreak + trivstrQ + bQN + lineBreak + this.text + lineBreak);
                                 }
                             }
                         }
@@ -2357,20 +2540,20 @@ TQPr.createTextResults = function (txtRes, bQN, bAG) {
                                 }
                             }
 
-                            txtRes.add("<br />" + trivstrCA + this.corrAns + "<br />");
+                            txtRes.add(lineBreak + trivstrCA + this.corrAns + lineBreak);
                         }
                     }
                     break;
                 }
         }
 
-        txtRes.add("<br />");
+        txtRes.add(lineBreak);
     }
 
     return bQN;
 }
 
-TQPr.createCGIResults = function( pl, bQN, bGD )
+TQPr.createCGIResults = function( pl, bQN, bGD, bIsNewGDocURL )
 {
   var subidx;
   var loc;
@@ -2384,6 +2567,8 @@ TQPr.createCGIResults = function( pl, bQN, bGD )
   var sSection = "";
   var sCurr;
 
+  if(bGD == undefined) bGD = false;
+  if(bIsNewGDocURL == undefined) bIsNewGDocURL = false;
   bQN++;
 
   sCurr = bQN;
@@ -2408,7 +2593,6 @@ TQPr.createCGIResults = function( pl, bQN, bGD )
     case HS:
     case LK:
     case OR:
-    case LT:
     case MR:
       if( this.bGradeInd )
       {
@@ -2424,7 +2608,9 @@ TQPr.createCGIResults = function( pl, bQN, bGD )
               strTemp = trivstrNA + ', ' + this.arChoices[subidx];
           }
 
-             if( bGD ) pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
+             if( bGD )
+               if ( bIsNewGDocURL ) pl.addparm( 'entry_1'+padDigits(pl.count,6), strTemp );
+               else pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
 			 else pl.addparm( sAnswer, strTemp );
 
           if( !bGD ) pl.addparm( sCAnswer, this.corrAns );
@@ -2457,7 +2643,9 @@ TQPr.createCGIResults = function( pl, bQN, bGD )
         else
           strTemp = this.strOurAns;
   
-        if( bGD ) pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
+        if( bGD )
+          if( bIsNewGDocURL ) pl.addparm( 'entry_1'+padDigits(pl.count,6), strTemp );
+          else pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
 		else pl.addparm( sAnswer, strTemp );
         if( !this.bSurvey && !bGD )
           pl.addparm( sCAnswer, this.corrAns );
@@ -2471,7 +2659,9 @@ TQPr.createCGIResults = function( pl, bQN, bGD )
       else
         strTemp = this.strOurAns;
 
-      if( bGD ) pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
+      if( bGD )
+        if ( bIsNewGDocURL ) pl.addparm( 'entry_1'+padDigits(pl.count,6), strTemp );
+        else pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
 	  else pl.addparm( sAnswer, strTemp );
       if( !this.bSurvey && !bGD )
       {
@@ -2492,7 +2682,9 @@ TQPr.createCGIResults = function( pl, bQN, bGD )
       else
         strTemp = this.strOurAns;
 
-      if( bGD ) pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
+      if( bGD )
+        if( bIsNewGDocURL ) pl.addparm( 'entry_1'+padDigits(pl.count,6), strTemp );
+        else pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
 	  else pl.addparm( sAnswer, strTemp );
       break;
 
@@ -2557,7 +2749,9 @@ TQPr.createCGIResults = function( pl, bQN, bGD )
               strTemp += ",";
           }
         }
-        if( bGD ) pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
+        if( bGD )
+          if( bIsNewGDocURL ) pl.addparm( 'entry_1'+padDigits(pl.count,6), strTemp );
+          else pl.addparm( 'entry.'+(pl.count-1)+'.single', strTemp );
 		else pl.addparm( sAnswer, strTemp );
         if( !bGD ) pl.addparm( sCAnswer, this.corrAns );
       }

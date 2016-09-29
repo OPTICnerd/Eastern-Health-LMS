@@ -6,7 +6,7 @@ var ocmOrig = document.oncontextmenu
 var ocmNone = new Function( "return false" )
 
 // Inline Object
-function ObjInline(n,a,x,y,w,h,v,z,c,d,cl) {
+function ObjInline(n,a,x,y,w,h,v,z,c,d,s,fb, cl) {
   this.name = n
   this.altName = a
   this.x = x
@@ -15,14 +15,15 @@ function ObjInline(n,a,x,y,w,h,v,z,c,d,cl) {
   this.h = h
   this.v = v
   this.z = z
+  this.s = s
   this.iType = '';
   this.isGrp = false
   this.hasOnUp = false
   this.hasOnRUp = false
   this.clip=0;
-  if(c==-1){
+  if(c==-1 || c==-2){
     this.bgColor = null;
-    this.clip=1;
+    this.clip=2;
   }else this.bgColor = c;
   this.obj = this.name+"Object"
   this.parmArray = new Array
@@ -40,6 +41,7 @@ function ObjInline(n,a,x,y,w,h,v,z,c,d,cl) {
   this.hasDone   = 0;
   this.flsPlayer = null;
   this.autoPlay  = false;
+  this.bAutoStart = false;
   this.hasBeenProcessed = false;
   this.bSizing = false;
   this.muteState = false;
@@ -47,6 +49,24 @@ function ObjInline(n,a,x,y,w,h,v,z,c,d,cl) {
   this.addClasses = cl;
   this.arrEvents = new Array
   this.timerVar=null;
+  this.YTPlayer = null;
+  this.quOrd = null;
+  this.bOffPage = false;
+  this.bBottom = fb?true:false;
+  this.opacity = 100;
+}
+
+function ObjInlineGetActualWidth()
+{
+	var width = this.w;
+	if( width == -1 ){
+		var obj = document.getElementById(this.name);
+		if( obj ){
+			width = obj.offsetWidth;
+		}
+	}
+	
+	return width;
 }
 
 function ObjInlineGetNS( tagName) { 
@@ -77,13 +97,16 @@ function ObjInlineActionGoToNewWindow( destURL, name, props ) {
 
 function ObjInlineActionPlay( ) { 
 
-  if(this.timerVar != null )
+  if(this.timerVar != null && typeof(this.timerVar) != "undefined" )
   {
 	var timerCurrVal = this.timerVar.getValue();
-	if( typeof(timerCurrVal) == "string" && timerCurrVal.indexOf( 'pause:' ) != -1 )
-	{
-		timerCurrVal = parseInt( timerCurrVal.split(':')[1] );
-		this.timerVar.set( new Date().getTime() - timerCurrVal );
+	if( timerCurrVal != null && typeof(timerCurrVal) != "undefined" ) {
+		timerCurrVal = timerCurrVal.toString();
+		if( timerCurrVal.indexOf( 'pause:' ) != -1 )
+		{
+			timerCurrVal = parseInt( timerCurrVal.split(':')[1] );
+			this.timerVar.set( (parseInt((new Date().getTime()+500)/1000)*1000) - timerCurrVal );
+		}
 	}
   }
   else if( this.iType == 'flashvid' ) 
@@ -106,17 +129,26 @@ function ObjInlineActionPlay( ) {
 							
 			if (this.flsPlayer.PercentLoaded() != 100) 
 				throw new Error('flash not loaded');
-				
-			this.setFlashPlayer();	
+	
 			if( !this.autoPlay )
-				this.flsPlayer.sendEvent('play');
-			this.autoPlay = true;
+			{
+				if(this.flsPlayer.sendEvent)
+				{
+					this.flsPlayer.sendEvent('play');
+					this.autoPlay = true;
+				}
+				else
+				{
+					var thisObj = this;
+					setTimeout(function(){thisObj.actionPlay();}, 1000);
+				}
+			}
 			
 		}catch(err){   
 			var thisObj = this;
 			 setTimeout(function(){
 				thisObj.actionPlay();
-			 }, 100);
+			 }, 1000);
 		}
 	 }
   }
@@ -129,9 +161,14 @@ function ObjInlineActionPlay( ) {
     this.autoPlay = true;
     
   }
-  else if( this.iType == 'wmp' ) {
+  else if( this.iType == 'wmp' ) 
+  {
     eval("document."+this.name+"obj"+".controls.play()");
     this.isPlaying = true;
+  }
+  else if(this.iType == 'youtube')
+  {
+	 this.YTPlayer.playVideo() ;
   }
   else this.objLyr.actionPlay();
 }
@@ -172,17 +209,54 @@ function ObjInlineActionStop( ) {
     eval("document."+this.name+"obj"+".controls.stop()");
     this.isPlaying = false;
   }
+  else if(this.iType == 'youtube')
+  {
+	 this.YTPlayer.stopVideo() ;
+  }
   else this.objLyr.actionStop();
 }
 
-function ObjInlineActionShow( ) {
+function ObjInlineActionShow( ) {  
+  if(IsMedia(this) && this.bAutoStart)
+  {
+	   this.actionPlay();
+	   this.bAutoStart = false;  
+  }
+  
+  if(IsAudioObj(this) && IsHiddenAudioObj(this))
+  {
+	this.actionShowAudio();
+	return;
+  }
+	 
+
   if( this.isGrp || !this.isVisible() )
     this.onShow();
 }
 
 function ObjInlineActionHide( ) {
+  if(IsMedia(this) && (this.isPlaying || this.autoPlay))
+	  this.actionPause();
+  
+  if( IsAudioObj(this) && !IsHiddenAudioObj(this) ){
+	this.actionHideAudio();
+	
+ 
+	return;
+  }
+
   if( this.isGrp || this.isVisible() )
     this.onHide();
+}
+
+function ObjInlineActionShowAudio(){
+	this.v = true;
+	this.onShowAudio();
+}
+
+function ObjInlineActionHideAudio(){
+	this.v = false;
+	this.onHideAudio();
 }
 
 function ObjInlineActionLaunch( ) {
@@ -263,19 +337,28 @@ function ObjInlineActionChangeContents( value, align, fntId ) {
     }
     
     var splitID = '<!--split=' + this.objLyr.id + 'ter' + '-->';
-	if( !is.ns4 ) {
-      var parts = this.objLyr.ele.innerHTML.split(splitID);
-      if ( parts.length == 3 )
-      {
-        if( varValue == "~~~null~~~" ) div = parts[0] + splitID + '<' + this.divTag + ' class="' + align + '"><span class="' + fntName + '">' + '</span></' + this.divTag + '>'  + splitID + parts[2]; 
-        else div =  parts[0] + splitID + '<' + this.divTag + ' class="' + align + '"><span class="' + fntName + '">' + varValue + '</span></' + this.divTag + '>' + splitID + parts[2]; 
-      }
+    var parts = this.objLyr.ele.innerHTML.split(splitID);
+    if ( parts.length == 3 )
+    {
+      if( varValue == "~~~null~~~" ) div = parts[0] + splitID + '<' + this.divTag + ' class="' + align + '"><span class="' + fntName + '">' + '</span></' + this.divTag + '>'  + splitID + parts[2]; 
+      else div =  parts[0] + splitID + '<' + this.divTag + ' class="' + align + '"><span class="' + fntName + '">' + varValue + '</span></' + this.divTag + '>' + splitID + parts[2]; 
     }
     if( !div )
     {
       if( varValue == "~~~null~~~" ) div = '<' + this.divTag + ' class="' + align + '"><span class="' + fntName + '">' + '</span></' + this.divTag + '>' 
       else div = '<' + this.divTag + ' class="' + align + '"><span class="' + fntName + '">' + varValue + '</span></' + this.divTag + '>'
     }
+	
+	if(this.heading > 0){
+		var splitDiv = div.split("<span");
+		
+		div = splitDiv[0] + "<h" + this.heading + "><span" + splitDiv[1];
+		
+		splitDiv = div.split("</span>")
+		
+		div = splitDiv[0] + "</span></h" + this.heading + ">" + splitDiv[1];
+	}
+	
     if( is.ns5 ) this.objLyr.ele.innerHTML = div
     else this.objLyr.write( div );
   }
@@ -352,7 +435,7 @@ function ObjInlineActionChangeContents( value, align, fntId ) {
 	{
 		var currParm = this.parmArray[i];
 		if( currParm.length > 6 && currParm.indexOf('<embed') == 0)
-			this.parmArray[i] = "<embed src='" + varValue + "' width='" + this.w + "'   height='" + this.h + "' type='application/x-shockwave-flash' pluginspage='http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash' name='swf" + this.name + "' swliveconnect='true'>";
+			this.parmArray[i] = "<embed src='" + varValue + "' width='" + this.w + "'   height='" + this.h + "' type='application/x-shockwave-flash' pluginspage='http://www.macromedia.com/shockwave/download/index.cgi?P1_Prod_Version=ShockwaveFlash' name='swf" + this.name + "' swliveconnect='true' "+(this.autoPlay?"autostart='true'":"")+">";
 	}
       }
       this.build();
@@ -384,22 +467,22 @@ function ObjInlineActionChangeContents( value, align, fntId ) {
         }
 	this.build();
 	this.objLyr.write( this.parmArray[0] );
-      }else{
-	document.getElementById(this.name).style.width = this.w
-	document.getElementById(this.name).style.height = this.h
       }
     }
   }
 }
 
 function ObjInlineActionTogglePlay( ) {
-  if(this.timerVar != null )
+  if( this.timerVar!=null && typeof(this.timerVar)!="undefined" )
   {
 	var timerCurrVal = this.timerVar.getValue();
-	if( typeof(timerCurrVal) == "string" && timerCurrVal.indexOf( 'pause:' ) != -1 )
-		this.actionPlay();
-	else
-		this.actionPause();
+	if( timerCurrVal != null && typeof(timerCurrVal) != "undefined" ) {
+		timerCurrVal = timerCurrVal.toString();
+		if( timerCurrVal.indexOf( 'pause:' ) != -1 )
+			this.actionPlay();
+		else
+			this.actionPause();
+	}
   }
   else if( this.iType == 'flashvid' ) 
   {
@@ -440,6 +523,13 @@ function ObjInlineActionTogglePlay( ) {
 	    this.isPlaying = true;
     }
   }
+  else if(this.iType == 'youtube')
+  {
+	if(this.YTPlayer.getPlayerState() == 1)
+		this.YTPlayer.pauseVideo();
+	else
+		this.YTPlayer.playVideo();
+  }
   else this.objLyr.actionTogglePlay();
 
 }
@@ -449,20 +539,41 @@ function ObjInlineActionToggleShow( ) {
     for ( var i=0; i<this.childArray.length; i++ )
        eval( this.childArray[i] + ".actionToggleShow()");
   }
-  else if(this.objLyr.isVisible()) 
-    this.actionHide();
+  else if(this.objLyr.isVisible()){ 
+    //echo LD-975: Audio objects are always visible. They are moved 10000px off page when hidden. 
+	if( IsAudioObj(this) ){
+		if( IsHiddenAudioObj(this) ){
+			this.actionShow();
+		}
+		else this.actionHide();
+	}
+	else
+		this.actionHide();
+  }
   else 
     this.actionShow();
 }
 
-function ObjInlineSizeTo( w, h ) { 
-    this.w = w
-    this.h = h
+function ObjInlineSizeTo( w, h, bResp ) { 
+    var tempObj = {xOffset:0, yOffset:0, width: w, height: h, xOuterOffset:0, yOuterOffset:0};
+		
+	AdjustAttributesForEffects(this, tempObj);
+	
+	AdjustIFrameSize(this, tempObj);
+	
+	var svgFilterTag = document.getElementById(this.name+"Shadow");
+	
+	if(svgFilterTag)
+		ModifySVGShadow(this, tempObj);
+		
     this.bSizing = true;
-    this.build()
-    this.activate()
-    if( this.objLyr )
-    	this.objLyr.clipTo( 0, w, h, 0  )
+	this.build()
+	if(this.objLyr)
+	{
+		this.activate()
+		if(typeof(bResp) == "undefined")
+			this.objLyr.clipTo( 0, tempObj.width, tempObj.height, 0  )
+	}
     this.actionChangeContents( '' )
 }
 
@@ -528,14 +639,11 @@ function ObjInlineSetFlashVar( varName,myValue ) {
 
 function ObjInlinePause() {
 
-  if(this.timerVar != null )
+  if( typeof this.timerVar != 'undefined' && this.timerVar != null )
   {
 	var timerCurrVal = parseInt( this.timerVar.getValue() );
-	if( timerCurrVal && timerCurrVal!= "NaN" )
-	{
-		timerCurrVal = parseInt( timerCurrVal );
-		this.timerVar.set( 'pause:' +  ( ( new Date().getTime()) - timerCurrVal )    ); //store elapsed time.
-	}
+	if( timerCurrVal && timerCurrVal != "NaN" )
+		this.timerVar.set( 'pause:' + ( (parseInt((new Date().getTime()+500)/1000)*1000) - timerCurrVal ) );
   }
   else if( this.iType == 'flashvid' ) 
   {
@@ -564,10 +672,24 @@ function ObjInlinePause() {
 	eval("document."+this.name+"obj"+".controls.pause()");
 	this.isPlaying = false;
   }
+  else if(this.iType == 'youtube')
+  {
+	this.YTPlayer.pauseVideo();
+  }
+}
+
+function ObjInlineDone() {
+  if( typeof this.timerVar != 'undefined' && this.timerVar != null )
+  {
+	var timerCurrVal = parseInt( this.timerVar.getValue() );
+	if( timerCurrVal && timerCurrVal != "NaN" )
+		this.timerVar.set( 'done:' + ( (parseInt((new Date().getTime()+500)/1000)*1000) - timerCurrVal ) );
+  }
 }
 
 function ObjInlineActionMute() {
-    if (this.iType == 'flashvid') {
+    if (this.iType == 'flashvid') 
+	{
       if (is.useHTML5Video()){	
 		var medobj = document.getElementById('html5' + this.name);
 		if (medobj)			
@@ -579,10 +701,15 @@ function ObjInlineActionMute() {
 		}
         this.muteState = true;
     }
+	else if(this.iType == 'youtube')
+	{
+		this.YTPlayer.mute();
+	}
 }
 
 function ObjInlineActionUnmute() {
-    if (this.iType == 'flashvid') {
+    if (this.iType == 'flashvid') 
+	{
       if (is.useHTML5Video()){	
 		var medobj = document.getElementById('html5' + this.name);
 		if (medobj)			
@@ -594,6 +721,10 @@ function ObjInlineActionUnmute() {
 		}
         this.muteState = false;
     }
+	else if(this.iType == 'youtube')
+	{
+		this.YTPlayer.unMute();
+	}
 }
 
 { // Setup prototypes
@@ -619,6 +750,8 @@ p.actionPlay = ObjInlineActionPlay
 p.actionStop = ObjInlineActionStop
 p.actionShow = ObjInlineActionShow
 p.actionHide = ObjInlineActionHide
+p.actionShowAudio = ObjInlineActionShowAudio
+p.actionHideAudio = ObjInlineActionHideAudio
 p.actionLaunch = ObjInlineActionLaunch
 p.actionExit = ObjInlineActionExit
 p.actionChangeContents = ObjInlineActionChangeContents
@@ -627,6 +760,8 @@ p.actionToggleShow = ObjInlineActionToggleShow
 p.writeLayer = ObjInlineWriteLayer
 p.onShow = ObjInlineOnShow
 p.onHide = ObjInlineOnHide
+p.onShowAudio = ObjInlineOnShowAudio
+p.onHideAudio = ObjInlineOnHideAudio
 p.isVisible = ObjInlineIsVisible
 p.onSelChg = new Function()
 p.addChild = ObjInlineAddChild
@@ -638,9 +773,11 @@ p.goToPrevFrame = ObjInlineGoToPrevFrame
 p.goToLabel     = ObjInlineGoToLabel
 p.getFlashVar   = ObjInlineGetFlashVar
 p.setFlashVar   = ObjInlineSetFlashVar
+p.getAcualWidth = ObjInlineGetActualWidth
 p.getNS         = ObjInlineGetNS
 p.getFlashVars  = ObjInlineGetFlashVar
 p.actionPause	= ObjInlinePause
+p.actionDone	= ObjInlineDone
 p.offset        = ObjInlineOffset
 p.moveGrp       = ObjInlineMoveGrp
 p.transGrp      = ObjInlineTransGrp
@@ -655,6 +792,15 @@ p.disable = ObjInlineDisableChild
 p.randomize = ObjInlineRandomize
 p.addChoice = ObjInlineAddChoice
 p.addEvent = ObjInlineAddEvent
+p.loadProps = ObjLoadProps
+p.respChanges = ObjRespChanges
+p.addYouTubeParams = ObjInlineYouTubeParams
+p.addYTScript = ObjInlineAddYouTubeAPI
+p.createPlayer = ObjInlineCreatePlayer
+p.stateChange = ObjInlinePlayerStateChange
+p.setAutostart = ObjInlineaddAutoStart
+p.reorgChoice = ObjInlineChoiceOrder
+p.validateSrc = ObjInlineValidSource
 
 p.initEvent = function()
 {
@@ -684,6 +830,10 @@ p.initEvent = function()
 						return;
 				THIS.clearEventsFlag(html5VidObj.currentTime)
 			},	false);
+			
+		html5VidObj.addEventListener("ended", 
+			function (){ THIS.clearEventsFlag(-1) },	false
+		);
 	}		
 };
 
@@ -700,15 +850,48 @@ p.clearEventsFlag = function(pos)
 }
 
 function ObjInlineBuild() {
-  if( this.bgColor || this.clip ) this.css = buildCSS(this.name,this.x,this.y,this.w,this.h,this.v,this.z,this.bgColor,'noclip')
-  else {
-    if( is.ns4 ) {
-      var right = this.w + this.x;
-      if( right <= window.innerWidth + 4 ) this.css = buildCSS(this.name,this.x,this.y,this.w,null,this.v,this.z,this.bgColor)
-      else this.css = buildCSS(this.name,this.x,this.y,this.w,this.h,this.v,this.z,this.bgColor)
-    }
-    else this.css = buildCSS(this.name,this.x,this.y,this.w,null,this.v,this.z,this.bgColor)
+  this.loadProps();
+  
+  var visible = this.v;
+  var leftPos = this.x;
+   
+  //echo LD-975: Move the audio object WAY off of the page if it's initially hidden. Always keep the flash window visible. 
+  //JB the audio can't be played in IE if it is not visible, and customers do this all the time.
+  if( IsAudioObj(this) ){
+	visible = true;
+	
+	if(IsHiddenAudioObj(this))
+		leftPos = 10000;
   }
+  
+  var clipRect ='';
+  if(this.clip == 2)
+  {
+	var adjW = this.w;
+	var adjH = this.h;
+	if(IsRSSFeed(this))
+	{
+		adjW+=2;
+		adjH+=2;
+	}		
+	clipRect = 'clip: rect(0px ' + adjW + 'px ' + adjH + 'px 0px);';
+  }
+  else
+	clipRect = 'noclip'; 
+
+  if( this.bgColor || this.clip || this.iType)
+    this.css = buildCSS(this.name,leftPos,this.y,this.w,this.h,visible,this.z,this.bgColor,clipRect)
+  else
+    this.css = buildCSS(this.name,leftPos,this.y,this.w,null,visible,this.z,this.bgColor)
+
+	if(this.s == 1 && is.iOS)
+	{
+		var tempStr = this.css.substring(0, this.css.length-2);
+		tempStr += '-webkit-overflow-scrolling: touch; overflow-y: scroll;';
+		tempStr += '}\n';
+		this.css = tempStr;
+	}
+
   var divStart
   var divEnd
   divStart = '<' + this.divTag + ' id="'+this.name+'"'
@@ -737,11 +920,13 @@ function ObjInlineActivate() {
         }
       }
     }
-    else
-      if( this.v ) this.actionShow()
+    else{
+      if( this.v ) this.actionShow();
+	  
+	  if( IsHiddenAudioObj(this) ) this.actionHideAudio();
+	}
   }
   if( this.capture & 4 ) {
-    if (is.ns4) this.objLyr.ele.captureEvents(Event.MOUSEDOWN | Event.MOUSEUP)
     this.objLyr.ele.onmousedown = new Function("event", this.obj+".down(event); return false;")
     this.objLyr.ele.onmouseup = new Function("event", this.obj+".up(event); return false;")
   }
@@ -759,14 +944,39 @@ function ObjInlineActivate() {
      var medobj = document.getElementById('html5' + this.name);
      if(medobj&&funcOnDone) medobj.addEventListener('ended', funcOnDone, false);
   }
+  try {
+    if( is.ie && is.v<=7 && this.objLyr.ele.getElementsByTagName )
+    {
+      var paraElems = this.objLyr.ele.getElementsByTagName("P");
+	  for ( var idx=0; paraElems && idx<paraElems.length; idx++ )
+	  {
+		if (paraElems[idx] && paraElems[idx].legLH )
+			paraElems[idx].style.lineHeight = paraElems[idx].legLH;
+	  }	
+    }
+  } catch(err) {}
+  
+  if(this.iType =='youtube')
+  {
+	  if(is.YTScriptLoaded)
+		  this.createPlayer();
+	  else
+	  {
+		  var THIS = this;
+		  setTimeout(function(){THIS.createPlayer();},500)
+	  }
+  }
+  if(IsMedia(this) && this.v && this.bAutoStart)
+	  this.actionPlay();
+  
+  this.objLyr.theObj = this;
 }
 
 function ObjInlineDown(e) {
   if( is.ie ) e = event
   if( is.ie && !is.ieMac && e.button!=1 && e.button!=2 ) return
   if( is.ieMac && e.button != 0 ) return
-  if( is.ns && !is.ns4 && e.button!=0 && e.button!=2 ) return
-  if( is.ns4 && e.which!=1 && e.which!=3 ) return
+  if( is.ns && e.button!=0 && e.button!=2 ) return
   this.onSelect()
   this.onDown()
 }
@@ -775,9 +985,8 @@ function ObjInlineUp(e) {
   if( is.ie ) e = event
   if( is.ie && !is.ieMac && e.button!=1 && e.button!=2 ) return
   if( is.ieMac && e.button!=0 ) return
-  if( is.ns && !is.ns4 && !is.nsMac && e.button!=0 && e.button!=2 ) return
-  if( is.ns4 && e.which!=1 && e.which!=3 ) return
-  if( ( !is.ns4 && e.button==2 ) || ( is.ns4 && e.which==3 ) )
+  if( is.ns && !is.nsMac && e.button!=0 && e.button!=2 ) return
+  if( e.button==2 )
   {
     if( this.hasOnRUp )
     {
@@ -828,7 +1037,38 @@ function ObjInlineOnHide() {
     this.objLyr.doc.forms[0].blur();
 }
 
+function ObjInlineOnShowAudio(){
+  this.alreadyActioned = true;
+  this.objLyr.actionShowAudio(this.x);
+  for ( var i=0; i<this.childArray.length; i++ )
+  {
+    if ( !eval( this.childArray[i] + ".isVisible()") )
+      eval( this.childArray[i] + ".actionShowAudio(" + this.x + ")");
+  }
+  
+  if( this.matchObj )
+	this.drawLine();
+}
+
+function ObjInlineOnHideAudio(){
+  this.alreadyActioned = true;
+  for ( var i=0; i<this.childArray.length; i++ )
+     eval( this.childArray[i] + ".actionHideAudio()");
+  this.objLyr.actionHideAudio();
+
+  if( this.matchLine )
+	  this.matchLine.ResizeTo( -10, -10, -10, -10 );
+  
+  if( this.objLyr.doc.forms.length > 0 && this.objLyr.doc.forms[0].blur )
+    this.objLyr.doc.forms[0].blur();
+}
+
 function ObjInlineIsVisible() {
+
+  //echo LD-975: Audio object DOM elements are always visible. The inline object is what keeps track of it's hidden state. 
+  if(IsAudioObj(this) && IsHiddenAudioObj(this))
+	return false;
+	
   if( this.objLyr.isVisible() )
     return true;
   else
@@ -840,7 +1080,7 @@ function ObjInlineDoTrans(tOut,tNum,dur,fn,ol,ot,fl,ft,fr,fb,il) {
   {
     for ( var i=0; i<this.childArray.length; i++ )
     {
-      if ( eval( this.childArray[i] + ".isVisible()") )
+      if ( !(eval( this.childArray[i] + ".isVisible()")) )
         eval( this.childArray[i] + ".actionShow()");
     }
   }
@@ -1073,7 +1313,7 @@ function ObjInlineDisableChild(e) {
     }
 }
 
-function ObjInlineRandomize() {
+function ObjInlineRandomize(bUseOrder) {
     var ctrlPlacement;
     var placementArr = new Array();
     var objBtnArr = new Array();
@@ -1113,23 +1353,41 @@ function ObjInlineRandomize() {
         }
     }
 
-    //placementArr.sort(function() {return 0.5 - Math.random()});
-    placementArr = shuffle(placementArr);
+    if(!bUseOrder)
+	{
+		var tmpPlacementArr = placementArr.slice();
+		placementArr = shuffle(placementArr);
+		this.quOrd = [];
+		
+		for (var i = 0; i < tmpPlacementArr.length; i++) 
+		{
+			for(var j = 0; j < placementArr.length; j++)
+			{
+				if(tmpPlacementArr[i] == placementArr[j])
+				{
+					this.quOrd[i] = j;
+					break;
+				}	
+			}			
+		}
+	}
+	
     for (var i = 0; i < placementArr.length; i++) {
         var e = objTxtArr[i];
+		var placementIndex = (bUseOrder?this.quOrd[i]:i);
         if (e) {
-            e.style.top = placementArr[i].txtY + "px";
-            e.style.left = placementArr[i].txtX + "px";
+            e.style.top = placementArr[placementIndex].txtY + "px";
+            e.style.left = placementArr[placementIndex].txtX + "px";
         }
         e = objBtnArr[i];
         if (e) {
-            e.style.top = placementArr[i].ctrlY + "px";
-            e.style.left = placementArr[i].ctrlX + "px";
+            e.style.top = placementArr[placementIndex].ctrlY + "px";
+            e.style.left = placementArr[placementIndex].ctrlX + "px";
         }
         e = objImgArr[i];
         if (e) {
-            e.style.top = placementArr[i].imgY + "px";
-            e.style.left = placementArr[i].imgX + "px";
+            e.style.top = placementArr[placementIndex].imgY + "px";
+            e.style.left = placementArr[placementIndex].imgX + "px";
         }
     }
 
@@ -1165,3 +1423,187 @@ function ObjInlineAddEvent(time, fn) {
 
 }
 
+function ObjLoadProps()
+{
+	if(is.jsonData != null)
+	{
+		var respValues = is.jsonData[is.clientProp.device];
+		var newValues;
+		newValues = respValues[is.clientProp.width];
+		var obj = newValues[this.name];
+		if(obj)
+		{
+			this.x = typeof(obj.x)!="undefined"?obj.x:this.x;
+			this.y = typeof(obj.y)!="undefined"?obj.y:this.y;
+			this.w = typeof(obj.w)!="undefined"?obj.w:this.w;
+			this.h = typeof(obj.h)!="undefined"?obj.h:this.h;
+            if( typeof(obj.fsize) != "undefined" )
+                this.fsize = obj.fsize;
+			
+			if(this.x > GetPageWidth() || ((this.x + this.w) < 0))
+				this.bOffPage = true;
+			else
+				this.bOffPage = false;
+		}
+	}
+}
+
+function ObjRespChanges()
+{
+	var tempObj = {xOffset:0, yOffset:0, width: this.w, height: this.h, xOuterOffset:0, yOuterOffset:0};
+		
+	AdjustAttributesForEffects(this, tempObj);
+	
+	AdjustIFrameSize(this, tempObj);
+	
+	var svgFilterTag = document.getElementById(this.name+"Shadow");
+	
+	if(svgFilterTag)
+		ModifySVGShadow(this, tempObj);
+	
+	if(this.iType === "youtube")
+	{ 
+	  var vidTag = document.getElementById("html5"+this.name);
+	  if(vidTag)
+	  {
+		vidTag.width = this.w;
+		vidTag.height = this.h;
+	  }
+	}
+	
+	
+	FindAndModifyObjCSSBulk(this);
+}
+
+function IsHiddenAudioObj(audObj){
+	if(audObj.obj.indexOf("audio") > -1 && !audObj.v)
+		return true;
+		
+	return false;
+}
+
+function IsAudioObj(audObj){
+	if( audObj.obj.indexOf("audio") > -1 )
+		return true;
+	
+	return false;
+}
+
+function IsMedia(obj)
+{
+	if(obj.iType == 'flashvid' || obj.iType == 'flash' || obj.iType == 'wmp' ||obj.iType == 'youtube')
+		return true;
+	
+	return false;
+}
+
+function IsRSSFeed(obj){
+	if( obj.name.indexOf("webwidget") > -1 )
+	{
+		var div = document.getElementById(obj.name);
+		if(div)
+		{
+			if(div.innerHTML.indexOf("feedControl") >-1)
+				return true;
+		}
+	}
+	
+	return false;
+}
+
+function ObjInlineYouTubeParams(videoID, autoplay, controls, loop)
+{
+	this.vID = videoID;
+	this.bLoop = loop;
+	this.ytVar = {'autoplay':autoplay, 'controls':controls};
+}
+
+function ObjInlineAddYouTubeAPI(scriptURL)
+{
+	AddFileToHTML(scriptURL, 'script');
+}
+
+function ObjInlineCreatePlayer()
+{
+	if(is.YTScriptLoaded)
+	{
+		this.YTPlayer = new YT.Player('html5'+this.name, 
+		{
+			height: this.h,
+			width: this.w,
+			videoId: this.vID,
+			playerVars: this.ytVar,
+			events: { 'onStateChange': this.stateChange} 
+		});
+		this.YTPlayer.__TrivantisObject__ = this;
+	}
+	else
+	{
+		var THIS = this;
+		setTimeout(function(){THIS.createPlayer();},500)
+	}
+}
+
+function ObjInlinePlayerStateChange(event)
+{
+	var funcOnDone=0;
+	var obj = event.target.__TrivantisObject__;
+	try{funcOnDone=eval( obj.name + 'onDone' );}catch(error){}
+	switch(event.data) 
+	{
+        case 0:
+		{
+			if(funcOnDone)
+				funcOnDone(obj);
+			else if(obj.bLoop)
+				obj.YTPlayer.playVideo();
+			break;
+		}
+	}
+}
+
+function ObjInlineaddAutoStart(bAutostart)
+{
+	this.bAutoStart = bAutostart;
+}
+
+function AdjustIFrameSize(obj, sizeObj)
+{
+	var iFrame = null;
+	iFrame = document.getElementById(obj.name+"iframe");
+	if(iFrame)
+	{
+		iFrame.width = sizeObj.width;
+		iFrame.height = sizeObj.height;
+	}
+}
+
+function IsTextWithEffect(obj)
+{
+	if(typeof(ObjText) != "undefined" && obj.constructor == ObjText)
+	{
+	 if((typeof(obj.hasOuterShadow) != "undefined" && obj.hasOuterShadow) || 
+	   (typeof(obj.hasBorder) != "undefined" && obj.hasBorder > 0)|| 
+	   (typeof(obj.hasTextShadow) != "undefined" && obj.hasTextShadow))
+	   return true;
+	}
+	
+	return false;
+}
+
+function ObjInlineChoiceOrder()
+{
+	if(this.quOrd)
+		this.randomize(true);
+		
+}
+
+function ObjInlineValidSource()
+{
+	if(this.bOffPage)
+	{
+		this.bOffPage = false;
+		if(this.iType == 'flashvid' || this.iType == 'flash' || this.iType == 'wmp')
+			this.actionChangeContents('');
+	}
+}

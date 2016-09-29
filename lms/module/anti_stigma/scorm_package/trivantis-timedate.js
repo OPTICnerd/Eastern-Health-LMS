@@ -3,24 +3,20 @@ Trivantis (http://www.trivantis.com)
 **************************************************/
 
 //functions for realtime date/time
-function FormatDS( now ) {
+function FormatLocaleDS( now ) {
     return now.toLocaleDateString()
 }
 
-function FormatTS( now ) {
+function FormatLocaleTS( now ) {
     var time = now.toLocaleTimeString()
-    if (time.length>3) {
-      idx=time.lastIndexOf(':')
-      if (idx>=0) {
-        var timenosec = time.substring(0,idx)
-        if (time.length>=idx+3)
-          timenosec = timenosec + time.substring(idx+3,time.length)
-        time = timenosec
-      }
-    }
-    idx=time.lastIndexOf(' ')
-    if (idx>0 && idx==time.length-4)
-      time = time.substring(0,time.length-4)
+	var timeParts = time.split(":");
+	if ( timeParts.length > 2 )
+	{
+		time = timeParts[0];
+		time += ":";
+		time += timeParts[1];
+		time += timeParts[2].replace(/^[^0-9]*[0-9]+/,"")
+	}
     return time;
 }
 

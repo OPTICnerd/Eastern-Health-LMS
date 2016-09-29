@@ -3,7 +3,7 @@ Trivantis (http://www.trivantis.com)
 **************************************************/
 
 // Menu Object
-function ObjMenu(n,a,i,x,y,w,h,v,z,c,hc,bc,bhc,brdc,sepc,sepc2,hz,b3,p,dummy,align,cl) {
+function ObjMenu(n,a,i,x,y,w,h,v,z,c,hc,bc,bhc,brdc,sepc,sepc2,hz,b3,p,dummy,align,fb,cl) {
   this.name = n
   this.altName = a
   this.x = x
@@ -25,6 +25,7 @@ function ObjMenu(n,a,i,x,y,w,h,v,z,c,hc,bc,bhc,brdc,sepc,sepc2,hz,b3,p,dummy,ali
   this.parentMenu=p
   this.obj = this.name+"Object"
   this.mnArray = new Array
+  this.subMenuArray = new Array
   this.numMenus = 0
   this.hrefPrompt = 'javascript:void(null);'
   this.alreadyActioned = false;
@@ -33,6 +34,8 @@ function ObjMenu(n,a,i,x,y,w,h,v,z,c,hc,bc,bhc,brdc,sepc,sepc2,hz,b3,p,dummy,ali
   this.txtAlign=align
   eval(this.obj+"=this")
   this.addClasses = cl;
+  this.bBottom = fb?true:false;
+  this.opacity = 100;
 }
 
 function ObjMenuActionGoTo( destURL, destFrame ) {
@@ -118,15 +121,31 @@ p.menuOut = ObjMenuOut
 p.addMenu = ObjMenuAddMenu
 p.isVisible = ObjMenuIsVisible
 p.sizeTo = ObjMenuSizeTo
+p.onMoved = ObjMenuOnMoved
 p.onSelChg = new Function()
+p.setIndicators = ObjMenuSetIndicators
+p.updateIndicators = ObjMenuUpdateIndicators
+p.loadProps = ObjLoadProps
+p.respChanges = ObjRespChanges
 }
 
 function ObjMenuBuild() {
+	
+this.loadProps();
   var other = 'align:center; text-align:' + this.txtAlign + '; vertical-align:center; color:#' + this.txtColor + ';';
-  if( this.bgImg ) other += ' background-image:URL('+this.bgImg+');  repeat:yes;';
   var tmpColor = '#' + this.bgColor;
+
+  if( this.bgImg ) 
+  {
+	  other += ' background-image:URL('+this.bgImg+');  repeat:yes;';
+	  if (tmpColor)
+		other += 'background-color:'+tmpColor+';'
+	 tmpColor = null;
+  }
+  if ( is.ie && is.v=='7' )
+  	other += ' clipright:'+(this.w+2)+'px; clipbottom:'+(this.h+2)+'px;';
   if(!this.bgHlColor)
-	tmpColor = null;
+	tmpColor = null;	
   this.css = buildCSS(this.name,this.x,this.y,this.w,this.h,this.v,this.z, tmpColor,other)
   var divStart
   var divEnd
@@ -136,10 +155,6 @@ function ObjMenuBuild() {
   else { if( this.altName != null ) divStart += ' alt=""' }
   divStart += '><a name="'+this.name+'anc">'
   divEnd   = '</a></div>'
-  if( is.ns4 && this.capture & 4 ) {
-    divStart = divStart + '<A HREF="' +this.hrefPrompt+'">'
-    divEnd   = '</A>' + divEnd 
-  }
   this.div = divStart + '\n'
   for (var i=0; i < this.numMenus; i++) this.div = this.div + this.mnArray[i]
   this.div = this.div + divEnd + '\n'
@@ -155,12 +170,13 @@ function ObjMenuActivate() {
     else this.actionHide()
   }
   if( this.capture & 4 ) {
-    if (is.ns4) this.objLyr.ele.captureEvents(Event.MOUSEDOWN | Event.MOUSEUP)
     this.objLyr.ele.onmousedown = new Function(this.obj+".down(); return false;")
     this.objLyr.ele.onmouseup = new Function(this.obj+".up(); return false;")
   }
   if( this.capture & 1 ) this.objLyr.ele.onmouseover = new Function(this.obj+".over(); return false;")
   if( this.capture & 2 ) this.objLyr.ele.onmouseout = new Function(this.obj+".out(); return false;")
+	  
+  this.objLyr.theObj = this;
 }
 
 function ObjMenuDown() {
@@ -189,6 +205,8 @@ function ObjMenuWriteLayer( newContents ) {
 function ObjMenuOnShow() {
   this.alreadyActioned = true;
   this.objLyr.actionShow();
+  if (this.indSz && Number(this.indSz)!=NaN )
+	this.updateIndicators();
 }
 
 function ObjMenuOnHide() {
@@ -198,7 +216,7 @@ function ObjMenuOnHide() {
 }
 
 function ObjMenuTimeout() {
-  if( this.objLyr.styObj.visibility.indexOf("inherit") != 0 ) return;
+  if( this.objLyr && this.objLyr.styObj.visibility.indexOf("inherit") != 0 ) return;
   var mouseIn = this.mouseIn;
   if( !mouseIn ) {
     var check = this.parentMenu;
@@ -230,7 +248,7 @@ function ObjMenuRemove( item ) {
     if( item ) { 
       item.style.color='#' + this.txtColor;
       if(this.bgImg||!this.bgColor) item.style.backgroundColor='transparent';
-	  else item.style.background='#' + this.bgColor;
+	  else item.style.backgroundColor='#' + this.bgColor;
       if( document.images[ item.id + 'arrow' ] ) document.images[ item.id + 'arrow' ].src = 'images/triv_menar' + this.txtColor + '.gif';
     }
 	this.actionHide();
@@ -241,8 +259,8 @@ function ObjMenuRemove( item ) {
 function ObjMenuOver( item, child ) {
     this.mouseIn = 1;
 	if( item ) { 
-	  if( !this.bgHlColor ) item.style.background='transparent';
-	  else item.style.background='#' + this.bgHlColor; 
+	  if( !this.bgHlColor ) item.style.backgroundColor='transparent';
+	  else item.style.backgroundColor='#' + this.bgHlColor; 
       document.getElementById(item.id+"span").style.color='#' + this.hlColor;
 	  if( document.images[ item.id + 'arrow' ] ) document.images[ item.id + 'arrow' ].src = 'images/triv_menar' + this.hlColor + '.gif';
 	}
@@ -260,7 +278,7 @@ function ObjMenuOut( item, child ) {
     this.mouseIn = 0;
 	if( item ) { 
       if(this.bgImg||!this.bgColor) item.style.backgroundColor='transparent';
-      else item.style.background='#' + this.bgColor;
+      else item.style.backgroundColor='#' + this.bgColor;
       document.getElementById(item.id+"span").style.color='#' + this.txtColor;
 	  if( document.images[ item.id + 'arrow' ] ) document.images[ item.id + 'arrow' ].src = 'images/triv_menar' + this.txtColor + '.gif';
 	}
@@ -268,10 +286,42 @@ function ObjMenuOut( item, child ) {
 	if( this.parentMenu ) setTimeout( this.obj + '.menuTimeout()', 1000 )
 }
 
-function ObjMenuAddMenu(nm,l,t,w,h,lb,tb,rb,bb,c,s,m) {
+function ObjMenuSetIndicators(compInd,ipInd,nsInd,indSz) {
+	this.compInd = compInd;
+	this.ipInd = ipInd?ipInd:null;
+	this.nsInd = nsInd?nsInd:null;
+	this.indSz = (compInd&&indSz&&Number(indSz)!=NaN)?indSz:16;
+}
+
+function ObjMenuUpdateIndicators() {
+  try {
+    if( trivPageTracking && this.objLyr.ele.getElementsByTagName )
+    {
+      var imgElems = this.objLyr.ele.getElementsByTagName("IMG");
+	  for ( var idx=0; imgElems && idx<imgElems.length; idx++ )
+	  {
+		if (imgElems[idx] && imgElems[idx].attributes['itemid'] )
+		{
+			var pageId = imgElems[idx].attributes['itemid'].value;
+			var status = trivPageTracking.GetRangeStatus( pageId );
+			if( status == 'notstarted' )
+				imgElems[idx].src = this.nsInd;
+			else if( status == 'inprogress' )
+				imgElems[idx].src = this.ipInd;
+			else 
+				imgElems[idx].src = this.compInd;
+		}
+	  }	
+    }
+  } catch(err) {}
+}
+
+function ObjMenuAddMenu(nm,l,t,w,h,lb,tb,rb,bb,c,s,m,itemId) {
   var index = this.name.indexOf( '_' );
   var fontName = index >= 0?String(this.name.substr( 0, index )+"Font2"):String(this.name+"Font1");
-  var divstr='<div id="' + nm + '" style="box-sizing:content-box; cursor:pointer; position:absolute; left:';
+  var divstr='<div id="' + nm + '" style="box-sizing:'; 
+  divstr+=  (is.chrome?'content-box;':'border-box;');
+  divstr+=  ' cursor:pointer; position:absolute; left:';
   var tableW = w;
   var tableH = h;
   var ptrMarg = m-4;
@@ -287,7 +337,8 @@ function ObjMenuAddMenu(nm,l,t,w,h,lb,tb,rb,bb,c,s,m) {
   if( tb ) divstr += ' border-top:' + tb + 'px #' + (this.b3d ? this.sepClr2 : this.brdClr) + ' solid;'; 
   if( rb ) divstr += ' border-right:' + rb + 'px #' + (this.b3d ? this.sepClr : this.brdClr) + ' solid;'; 
   if( bb ) divstr += ' border-bottom:' + bb + 'px #' + (this.b3d ? this.sepClr : this.brdClr) + ' solid;'; 
-  if( this.bgColor ) divstr += ' background-color: #' + this.bgColor + ';';
+  if( this.bgImg ) divstr += ' background-color: transparent;';
+  else if( this.bgColor ) divstr += ' background-color: #' + this.bgColor + ';';
   divstr += '" onmouseover=' + this.name + '.menuOver('
   if( s != '' ) divstr += 'this';
   if( c != '' ) divstr +=  ',' + c;
@@ -295,6 +346,7 @@ function ObjMenuAddMenu(nm,l,t,w,h,lb,tb,rb,bb,c,s,m) {
   if( s != '' ) divstr += 'this';
   if( c != '' ) divstr +=  ',' + c;
   divstr += ');'
+  var isInd = (this.indSz && Number(this.indSz)!=NaN );
   var strRemoveMenu = ''
   if( this.parentMenu ) strRemoveMenu = this.name + '.menuRemove(this); '
   if( c == '' && s != '' ) divstr += ' onclick="' + strRemoveMenu + 'triv' + nm + 'Click();"';
@@ -308,13 +360,30 @@ function ObjMenuAddMenu(nm,l,t,w,h,lb,tb,rb,bb,c,s,m) {
     // add the table and row to all menu items
     divstr += '<table cellpadding=0 cellspacing=0 class="' + fontName + '" border=0 height=' + tableH + 'px width=' + tableW + '><tr align=' + this.txtAlign + '  valign=middle height=' + tableH + 'px>';
     
-    // add left padding for vetical menus and first item on left of horizontal menu
-    divstr += '<td width=' + m + 'px height=' + tableH + 'px >&nbsp;</td>';
-        
+	// add left padding for vertical menus and first item on left of horizontal menu
+	if ( this.txtAlign == 'left' )
+		divstr += '<td width=' + parseInt(isInd?(m/2-1):m)+ 'px height=' + tableH + 'px >&nbsp;</td>';
+	else
+		divstr += '<td width=' + (isInd?m/2:m)+ 'px height=' + tableH + 'px >&nbsp;</td>';
+		
+	// if indicator menu, add left padding indicator
+	if ( isInd )
+	{
+		// add right padding for vertical menus and last item on right of horizontal menu
+		if ( this.txtAlign == 'left' )
+			divstr += '<td width=' + parseInt(this.indSz+4) + 'px height=' + tableH + 'px align=left>';
+		else
+			divstr += '<td width=' + this.indSz + 'px height=' + tableH + 'px align=left>';
+		
+		divstr += '<div align="right" style="cursor:pointer; width:' + this.indSz + 'px;"><img itemId="' + itemId + '" id="' + nm + 'ind" name="' + nm + 'ind" src="' + this.compInd + '" height="' + this.indSz  + '" width="' + this.indSz  + '"></div>';
+		
+		divstr += '</td>';
+	}
+	
     // add the text contents
     divstr += '<td width=* height=' + tableH + 'px><span id="' + nm + 'span" class="' + fontName + '">' + s + '</span></td>';
 
-    // add right padding for vetical menus and last item on right of horizontal menu
+    // add right padding for vertical menus and last item on right of horizontal menu
     divstr += '<td width=' + m + 'px height=' + tableH + 'px align=left>';
 
     divstr += '<div align="right" style="cursor:pointer; width:' + ptrMarg + 'px;"><img id="' + nm + 'arrow" name="' + nm + 'arrow" src="images/triv_menar' + this.txtColor + '.gif"></div>';
@@ -329,13 +398,30 @@ function ObjMenuAddMenu(nm,l,t,w,h,lb,tb,rb,bb,c,s,m) {
     // add the table and row to all menu items
     divstr += '<table cellpadding=0 cellspacing=0 class="' + fontName + '" border=0 height=' + tableH + 'px width=' + tableW + '><tr align=' + this.txtAlign + '  valign=middle height=' + tableH + 'px>';
     
-    // add left padding for vetical menus and first item on left of horizontal menu
-    divstr += '<td width=' + m + 'px height=' + tableH + 'px >&nbsp;</td>';
+    // add left padding for vertical menus and first item on left of horizontal menu
+    if ( this.txtAlign == 'left' )
+        divstr += '<td width=' + parseInt(isInd?(m/2-1):m)+ 'px height=' + tableH + 'px >&nbsp;</td>';
+    else
+	divstr += '<td width=' + (isInd?m/2:m)+ 'px height=' + tableH + 'px >&nbsp;</td>';
         
+	// if indicator menu, add left padding indicator
+	if ( isInd )
+	{
+		// add right padding for vertical menus and last item on right of horizontal menu
+		if ( this.txtAlign == 'left' )
+			divstr += '<td width=' + parseInt(this.indSz+4) + 'px height=' + tableH + 'px align=left>';
+		else
+			divstr += '<td width=' + this.indSz + 'px height=' + tableH + 'px align=left>';
+
+		divstr += '<div align="right" style="cursor:pointer; width:' + this.indSz + 'px;"><img itemId="' + itemId + '" id="' + nm + 'ind" name="' + nm + 'ind" src="' + this.compInd + '" height="' + this.indSz  + '" width="' + this.indSz  + '"></div>';
+		
+		divstr += '</td>';
+	}
+		
     // add the text contents
     divstr += '<td width=* height=' + tableH + 'px><span id="' + nm + 'span" class="' + fontName + '">' + s + '</span></td>';
 
-    // add right padding for vetical menus and last item on right of horizontal menu
+    // add right padding for vertical menus and last item on right of horizontal menu
     divstr += '<td width=' + m + 'px height=' + tableH + 'px>&nbsp;</td>';
     
     divstr += '</tr></table>';
@@ -343,8 +429,10 @@ function ObjMenuAddMenu(nm,l,t,w,h,lb,tb,rb,bb,c,s,m) {
   
   divstr += '</div>\n';
   this.mnArray[this.numMenus++] = divstr;
+  if( c != '' ) this.subMenuArray.push(c);
 }
 
+ 
 function ObjMenuIsVisible() {
   if( this.objLyr.isVisible() )
     return true;
@@ -356,6 +444,57 @@ function ObjMenuSizeTo( w, h ) {
   this.w = w
   this.h = h
   this.build()
-  this.activate()
-  this.objLyr.clipTo( 0, w, h, 0  )
+  if(this.objLyr)
+  {
+	  this.activate()
+	  this.objLyr.clipTo( 0, w, h, 0  )
+  }
 }
+
+function ObjMenuOnMoved( ) {
+  var adjX = this.objLyr.newX - this.x;
+  var adjY = this.objLyr.newY - this.y;
+  for ( var i=0; i<this.subMenuArray.length; i++ )
+  {
+	var subMenu = eval(this.subMenuArray[i]);
+	if ( subMenu )
+	{
+		subMenu.objLyr.ele.style.left = subMenu.x+adjX+"px";
+		subMenu.objLyr.ele.style.top = subMenu.y+adjY+"px";
+		subMenu.objLyr.hasMoved = true; 
+		subMenu.objLyr.newX = parseInt(subMenu.objLyr.ele.style.left); 
+		subMenu.objLyr.newY = parseInt(subMenu.objLyr.ele.style.top); 
+		subMenu.onMoved()		
+	}
+  }
+}
+
+function ObjLoadProps()
+{
+	if(is.jsonData != null)
+	{
+		var respValues = is.jsonData[is.clientProp.device];
+		var newValues;
+		newValues = respValues[is.clientProp.width];
+		var obj = newValues[this.name];
+		if(obj)
+		{
+			this.x = typeof(obj.x)!="undefined"?obj.x:this.x;
+			this.y = typeof(obj.y)!="undefined"?obj.y:this.y;
+			this.w = typeof(obj.w)!="undefined"?obj.w:this.w;
+			this.h = typeof(obj.h)!="undefined"?obj.h:this.h;
+		}
+	}
+}
+
+function ObjRespChanges()
+{
+	if(this.objLyr)
+	  this.sizeTo(this.w, this.h);
+	else
+	  this.build();
+	
+	//Adjust the CSS
+	FindAndModifyObjCSSBulk(this);	
+}
+

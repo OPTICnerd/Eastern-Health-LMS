@@ -17,12 +17,12 @@ TTPr.SetInteraction = function( vn, qidx )
     this.arRTPages[qidx].setInteraction( vn );
 }
 
-TTPr.HandleInteractions = function( res, cid, sid, lid, sv, incqt, tmstmp ) 
+TTPr.HandleInteractions = function( res, cid, sid, lid, sv, incqt, tmstmp, forcetf ) 
 { 
   var i;
 
   for( i = 0; i < this.arRTPages.length; i++ )
-    this.arRTPages[i].handleInteractions( res, cid, sid, lid, sv, incqt, tmstmp );
+    this.arRTPages[i].handleInteractions( res, cid, sid, lid, sv, incqt, tmstmp, forcetf);
 
   return;
 }
@@ -60,13 +60,13 @@ TPPr.setInteraction = function( vn )
   }
 }
 
-TPPr.handleInteractions = function( res, cid, sid, lid, sv, incqt, tmstmp )
+TPPr.handleInteractions = function( res, cid, sid, lid, sv, incqt, tmstmp, forcetf )
 {
   var i;
 
   for( i = 0; i < this.arQues.length; i++ )
   {
-    this.arQues[i].handleInteractions( res, cid, sid, lid, this.lIntET, this.dateInt, sv, incqt, tmstmp );
+    this.arQues[i].handleInteractions( res, cid, sid, lid, this.lIntET, this.dateInt, sv, incqt, tmstmp, forcetf );
     this.lIntET = 0;
   }
   
@@ -159,21 +159,7 @@ function intTimeForm( dt, bDt, bUTC )
 
 var letArr = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-function limitEscape( str )
-{
-  var tmp;
-  while( 1 )
-  {
-    tmp = unescape(HtmlEscape(str));
-    if( tmp.length > 255 )
-      str = str.substring( 0, str.length-1 );
-    else
-      break;
-  }
-  return str;
-}
-
-TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstmp )
+TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstmp, forcetf )
 {
   if( this.type == UNK ) return res.str;
   
@@ -188,6 +174,7 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
   var dateString = null;
   var timeString = null;
   var strTempAnswer = null;
+  var strLikertAns = this.strOurAns + ",";
   var strTempCorrect = null;
   var strTemp = null;
   var strTempCurr = null;
@@ -197,8 +184,7 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
   var bGradeable;
   var maxNum = 1;
   var numChoices = 0;
-  var loc = 0;
-  var loc2 = 0;
+  var loc;
   var i;
   var i2;
   var numC;
@@ -211,7 +197,7 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
   var bChSel = false;
   var bChCor = false;
 
-  if( (this.type == MT || this.type == DD || this.type == MC || this.type == HS) && this.bGradeInd )
+  if( (this.type == MT || this.type == DD || this.type == MC || this.type == HS || this.type == MR || this.type == OR) && this.bGradeInd )
   {
     if(this.arChoices.length>0)
       maxNum = this.arChoices.length;
@@ -225,12 +211,14 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
 
     el /= maxNum;
   }
+  else if( this.type == LK )
+  {
+    maxNum = this.arStmts.length;
+  }
 
-  strID     = this.name + "_";
-  strIDSave = strID.replace(/ /g, '_');
-  strID     = strIDSave.replace(/'/g, '_' );
-  strIDSave = strID.replace(/"/g, '_');
-
+  strID     = (this.name + "_").replace(/['" ~]/g, '_');
+  strIDSave = strID;
+  
   strTimeID = lTime;
 
   for( subIdx = 0; subIdx < maxNum; subIdx++ )
@@ -242,7 +230,7 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
     {
       case TF:
         strType     = "true-false";
-        if( sv == TINCAN )
+        if( forcetf )
         {
           if( this.choices.indexOf( this.corrAns ) == 0 )
             strCorrect = "true";
@@ -254,11 +242,6 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
           else
             strAnswer = "false";
         }
-        else if( sv == 2004 )
-        {
-          strCorrect = this.corrAns.toLowerCase();
-          strAnswer  = this.strOurAns.toLowerCase();
-        }
         else
         {
           strCorrect  = this.corrAns;
@@ -268,45 +251,96 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
         break;
 
       case LK:
-      case LT:
         strType     = "likert";
         strCorrect  = "n/a";
-        strAnswer   = this.strOurAns;
-        strID      += this.id;
+        strAnswer   = strLikertAns;
+
+        numChoices = this.arChoices.length;
+
+        var strStmtPrefix = this.arStmtNms.length > subIdx ? this.arStmtNms[subIdx] : (subIdx + 1).toString();
+        strStmtPrefix+="-";
+        if( strLikertAns.indexOf( strStmtPrefix ) == 0 )
+        {
+          strLikertAns = strLikertAns.substring( strStmtPrefix.length, strLikertAns.length );
+          for( j = 0; j < numChoices; j++ )
+          {
+            if( ( this.arChoices[j] == strLikertAns.substring( 0, this.arChoices[j].length ) ) && ( strLikertAns.charAt( this.arChoices[j].length ) == ',' ) )
+            {
+              strAnswer = this.arChoices[j];
+              strLikertAns = strLikertAns.substring( this.arChoices[j].length + 1, strLikertAns.length );
+              break;
+            }
+          }
+        }
+
+		if( sv == 2004 )
+			strAnswer = this.strAnswer.replace(/ /g, "_");
+			
+        strID += this.id + "-" + ( subIdx + 1 );
         bGradeable  = false;
         break;
         
       case OR:
         strType     = "sequencing";
-        strCorrect  = this.corrAns;
-        strAnswer   = this.strOurAns;
-        strID      += this.id;
-        break;
-        
-      case MC:
-      case HS:
-      case MR:
-        strType = "choice";
         strCorrect  = "";
         strAnswer   = "";
 
         numChoices = this.arChoices.length;
 
-        strTempAnswer  = addDelimeter( this.arChoices, this.strOurAns, "|||");
-        strTempCorrect = addDelimeter( this.arChoices, this.corrAns, "|||");
-   
+        var tempStrOurAns = this.strOurAns.replace(/&#44/g,",");
+        strTempAnswer  = addDelimeter( this.arChoices, tempStrOurAns, "|||");
+        var tempCorrAns = this.corrAns.replace(/&#44/g,",");
+        strTempCorrect = addDelimeter( this.arChoices, tempCorrAns, "|||");
 
-        if( this.type == OR )
+        if( bGradeInd )
         {
+          posStart = 0;
+          strTempChoice = this.arChoices[subIdx];
+          strTemp = "|||" + strTempChoice + "|||";
           for( j = 0; j < numChoices; j++ )
           {
-            posEnd = strTempAnswer.indexOf( ',', posStart+1 );
+            posEnd = strTempAnswer.indexOf( "|||", posStart+"|||".length );
             if( posEnd != -1 )
-              strTempCurr = strTempAnswer.substring( posStart, posEnd+1 );
+              strTempCurr = strTempAnswer.substring( posStart, posEnd+"|||".length );
             else
               strTempCurr = "";
             
-            loc = 0;
+            if( strTemp == strTempCurr )
+            {
+              strAnswer = letArr.charAt(j);
+              break;
+            }
+            posStart = posEnd;
+          }
+
+          posStart = 0;
+          for( j = 0; j < numChoices; j++ )
+          {
+            posEnd = strTempCorrect.indexOf( "|||", posStart+"|||".length );
+            if( posEnd != -1 )
+              strTempCurr = strTempCorrect.substring( posStart, posEnd+"|||".length );
+            else
+              strTempCurr = "";
+            
+            if( strTemp == strTempCurr )
+            {
+              strCorrect = letArr.charAt(j);
+              break;
+            }
+            posStart = posEnd;
+          }
+        }
+        else
+        {
+          posStart = 0;
+          for( j = 0; j < numChoices; j++ )
+          {
+            posEnd = strTempAnswer.indexOf( "|||", posStart+"|||".length );
+            if( posEnd != -1 )
+              strTempCurr = strTempAnswer.substring( posStart, posEnd+"|||".length );
+            else
+              strTempCurr = "";
+            
             for( i = 0; i < numChoices; i++ )
             {
               strTempChoice = this.arChoices[i];
@@ -322,81 +356,129 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
                     strAnswer += ",";
                 }
 
-                if( sv == TINCAN )
+                if( sv > 2004 )
                   strAnswer += strTempChoice;
                 else
                   strAnswer += letArr.charAt(i);
                 break;
               }
-              loc = loc2 + 1;
             }
-            
             posStart = posEnd;
           }
-        }
-        else
-        {
-          if( bGradeInd && (this.type == MC || this.type == HS) )
+
+          posStart = 0;
+          for( j = 0; j < numChoices; j++ )
           {
-            bChSel = IsChoiceSelected( this.arChoices[subIdx], this.strOurAns );
-            bChCor = this.isCorrectSub( this.arChoices[subIdx] );
-            if( bChSel )
-            {
-              if( sv == TINCAN )
-                strAnswer += this.arChoices[subIdx];
-              else
-                strAnswer += letArr.charAt(subIdx);
-            }
+            posEnd = strTempCorrect.indexOf( "|||", posStart+"|||".length );
+            if( posEnd != -1 )
+              strTempCurr = strTempCorrect.substring( posStart, posEnd+"|||".length );
             else
-              strAnswer += "";
-            if( bChCor )
-            {
-              if( sv == TINCAN )
-                strCorrect += this.arChoices[subIdx];
-              else
-                strCorrect += letArr.charAt(subIdx);
-            }
-          }
-          else
-          {
-            loc = 0;
+              strTempCurr = "";
+            
             for( i = 0; i < numChoices; i++ )
             {
               strTempChoice = this.arChoices[i];
               strTemp = "|||" + strTempChoice + "|||";
-  
-              if( strTempCorrect.indexOf( strTemp ) >= 0 )
+
+              if( strTemp == strTempCurr )
               {
                 if( strCorrect.length > 0 )
                 {
-                  if( this.bAllowMult && sv >= 2004 )
+                  if( sv >= 2004 )
                     strCorrect += "[,]";
                   else
                     strCorrect += ",";
                 }
-                
-                if( sv == TINCAN )
+
+                if( sv > 2004 )
                   strCorrect += strTempChoice;
                 else
                   strCorrect += letArr.charAt(i);
+                break;
               }
+            }
+            posStart = posEnd;
+          }
+        }
+
+        if( bGradeInd )
+          strID += this.id + "-" + ( subIdx + 1 );
+        else
+          strID += this.id;
+        break;
+        
+      case MC:
+      case HS:
+      case MR:
+        strType = "choice";
+        strCorrect  = "";
+        strAnswer   = "";
+
+        numChoices = this.arChoices.length;
+
+        var tempStrOurAns = this.strOurAns.replace(/&#44/g,",");
+        strTempAnswer  = addDelimeter( this.arChoices, tempStrOurAns, "|||");
+        var tempCorrAns = this.corrAns.replace(/&#44/g,",");
+        strTempCorrect = addDelimeter( this.arChoices, tempCorrAns, "|||");
+   
+        if( bGradeInd )
+        {
+          bChSel = IsChoiceSelected( this.arChoices[subIdx].replace(/,/g,"&#44"), this.strOurAns );
+          bChCor = this.isCorrectSub( this.arChoices[subIdx].replace(/,/g,"&#44") );
+          if( bChSel )
+          {
+            if( sv == TINCAN )
+              strAnswer += this.arChoices[subIdx];
+            else
+              strAnswer += letArr.charAt(subIdx);
+          }
+          else
+            strAnswer += "";
+          if( bChCor )
+          {
+            if( sv == TINCAN )
+              strCorrect += this.arChoices[subIdx];
+            else
+              strCorrect += letArr.charAt(subIdx);
+          }
+        }
+        else
+        {
+          for( i = 0; i < numChoices; i++ )
+          {
+            strTempChoice = this.arChoices[i];
+            strTemp = "|||" + strTempChoice + "|||";
   
-              if( strTempAnswer.indexOf( strTemp ) >= 0 )
+            if( strTempCorrect.indexOf( strTemp ) >= 0 )
+            {
+              if( strCorrect.length > 0 )
               {
-                if( strAnswer.length > 0 )
-                {
-                  if( ( this.bAllowMult || this.type == OR ) && sv >= 2004 )
-                    strAnswer += "[,]";
-                  else
-                    strAnswer += ",";
-                }
-  
-                if( sv == TINCAN )
-                  strAnswer += strTempChoice;
+                if( this.bAllowMult && sv >= 2004 )
+                  strCorrect += "[,]";
                 else
-                  strAnswer += letArr.charAt(i);
+                  strCorrect += ",";
               }
-              loc = loc2 + 1;
+                
+              if( sv == TINCAN )
+                strCorrect += strTempChoice;
+              else
+                strCorrect += letArr.charAt(i);
+            }
+  
+            if( strTempAnswer.indexOf( strTemp ) >= 0 )
+            {
+              if( strAnswer.length > 0 )
+              {
+                if( ( this.bAllowMult || this.type == OR ) && sv >= 2004 )
+                  strAnswer += "[,]";
+                else
+                  strAnswer += ",";
+              }
+  
+              if( sv == TINCAN )
+                strAnswer += strTempChoice;
+              else
+                strAnswer += letArr.charAt(i);
             }
           }
         }
@@ -407,7 +489,7 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
           strAnswer  = "{" + strAnswer + "}";
         }
 
-        if( bGradeInd && (this.type == MC || this.type == HS) )
+        if( bGradeInd && (this.type == MC || this.type == HS || this.type == MR) )
           strID += this.id + "-" + ( subIdx + 1 );
         else
           strID += this.id;
@@ -485,6 +567,7 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
       case DD:
         strType   = "matching";
         strAnswer = "";
+        strCorrect = "";
         var oArr  = this.strOurAns.split(",");
               
         if( bGradeInd )
@@ -498,12 +581,20 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
             strTemp = "0-0";
             if( this.arCorrAns.length > subIdx )
               strTemp = this.arCorrAns[subIdx];
-            strCorrect += strTemp.replace( /-/, "[.]" );
+			  
+			strTemp = strTemp.replace( /-/g, "[.]" );
+			strTemp = strTemp.replace( /\|/g, "[,]" );
+			
+            strCorrect += strTemp;
               
             strTemp = "0-0";
             if( oArr.length > subIdx )
               strTemp = oArr[subIdx];
-            strAnswer += strTemp.replace( /-/, "[.]" );
+			  
+			strTemp = strTemp.replace( /-/g, "[.]" );
+			strTemp = strTemp.replace( /\|/g, "[,]" );
+			
+            strAnswer = strTemp;
           } 
           else
           {
@@ -580,7 +671,11 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
             if( sv == TINCAN )
             {
               strTemp = this.arCorrAns[i];
-              strCorrect += strTemp.replace( /-/, "[.]" );
+			  
+              strTemp = strTemp.replace( /-/g, "[.]" );
+			  strTemp = strTemp.replace( /\|/g, "[,]" );
+			  
+			  strCorrect += strTemp
             } 
             else
             {
@@ -609,7 +704,10 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
             if( sv == TINCAN )
             {
               strTemp = oArr[i];
-              strAnswer += strTemp.replace( /-/, "[.]" );
+              strTemp = strTemp.replace( /-/g, "[.]" );
+			  strTemp = strTemp.replace( /\|/g, "[,]" );
+			  
+			  strAnswer += strTemp;
             } 
             else
             {
@@ -692,9 +790,17 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
     {
       if( bGradeInd ) 
       {
-        if( this.type == MC || this.type == HS )
+        if( this.type == MC || this.type == HS || this.type == MR )
         {
+		
           if( (bChSel && bChCor) || (!bChSel && !bChCor) )
+            iResult = 1;
+          else
+            iResult = 0;
+        }
+        else if( this.type == OR )
+        {
+          if( strAnswer == strCorrect )
             iResult = 1;
           else
             iResult = 0;
@@ -762,44 +868,58 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
 	if(bGradeInd && strCorrect.length == 0)
 	  strCorrect = "";
     else if( strCorrect == null || strCorrect.length == 0 )
-	  strCorrect = "n/a";
-	    
-    if( sv >= 2004 &&
-       (this.type == MT || this.type == DD))
+    {
+      if( this.type == MC || this.type == HS || this.type == MR )
+            strCorrect = "a";
+      else 
+            strCorrect = "n/a";
+    }
+	
+    if( sv >= 2004 && (this.type == MT || this.type == DD))
       ;
     else
-      strCorrect = limitEscape( strCorrect );
-      
-    strCorrect = unescape( HtmlEscape( strCorrect ) );
+    {
+      if( strCorrect.length > 255 )
+        strCorrect = strCorrect.substring( 0, 254 );
+    }
     strCorrect = convJS( strCorrect );
+
     
     if( strAnswer != null && strAnswer.length > 0)
     {
-      if( sv >= 2004 &&
-         (this.type == MT || this.type == DD))
+      if( sv >= 2004 && (this.type == MT || this.type == DD))
         ;
       else
-        strAnswer = limitEscape( strAnswer );
-        
-      strAnswer = unescape( HtmlEscape( strAnswer ) );
+      {
+        if( strAnswer.length > 255 )
+          strAnswer = strAnswer.substring( 0, 254 );
+      }
       strAnswer = convJS( strAnswer );
+
     }
     
-    strTemp = null;
+    strQText = null;
     if( incqt )
     {
-      strTemp = this.text;
-      if( strTemp != null && strTemp.length > 0)
-      {
-        strTemp = unescape( HtmlEscape( strTemp ) );
-        strTemp = convJS( strTemp );
-      }
+      if( this.type == LK )
+        strQText = this.arStmts[subIdx];
+      else
+        strQText = this.text;
+
+      if( strQText != null && strQText.length > 0)
+        strQText = convJS( strQText );
     }
-    
-    strResult = unescape( HtmlEscape( strResult ) );
 
     if( sv > 0 )
-      putSCORMInteractions( strID, null, timeString, strType, strCorrect, this.weight, strAnswer, strResult, strLatency, strTemp );
+    {
+      arChoicesTemp = new Array();
+      if( bGradeInd )
+        arChoicesTemp.push( this.arChoices[subIdx] );
+      else
+        arChoicesTemp = this.arChoices;
+
+      putSCORMInteractions( strID, null, timeString, strType, strCorrect, this.weight, strAnswer, strResult, strLatency, strQText, arChoicesTemp, this.arCorrAns );
+    }
     else
     {
       if( res.str.length == 0 )
@@ -823,10 +943,54 @@ TQPr.handleInteractions = function( res, cid, sid, lid, el, di, sv, incqt, tmstm
       res.add( "\"" + this.weight + "\"," );
       res.add( "\"" + strLatency + "\""  );
       if( incqt )
-        res.add( ",\"" + strTemp + "\"" );
+        res.add( ",\"" + strQText + "\"" );
       res.add( "\n" );
     }
   }
 
   return res.str;
+}
+
+function addDelimeter( arCh, strAns, del )
+{
+  var retVar = "";
+  if( strAns != null && strAns != "" )
+  {
+    var strTmpChoice = "";
+    var str = "," + strAns + ",";
+
+    var arChOff = new Array();
+    for( var i=0; i<arCh.length; i++ )
+    {
+      strTmpChoice = "," + arCh[i] + ",";
+      loc = str.indexOf(strTmpChoice);
+      arChOff.push(loc);
+    }
+    var arChOrder = new Array();
+    var low;
+    do {
+      low = -1;
+      for( var i=0; i<arChOff.length; i++ )
+      {
+        if( arChOff[i] != -1 )
+        {
+          if( low == -1 || arChOff[i] < arChOff[low] )
+            low = i;
+        }
+      }
+      if( low != -1 )
+      {
+        arChOrder.push(low);
+        arChOff[low] = -1;
+      }
+    } while( low != -1 );
+    for( var i=0; i<arChOrder.length; i++ )
+    {
+      retVar += del;
+      retVar += arCh[arChOrder[i]];
+    }
+    if( arChOrder.length > 0 )
+      retVar += del;
+  }
+  return retVar;
 }

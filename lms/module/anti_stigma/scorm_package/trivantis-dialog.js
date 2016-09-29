@@ -6,32 +6,32 @@ var IDCAN = 1;
 var MB_OK = 0; // default
 var MB_OKCAN = 1;
 
-var INC_dlgMsgBox =	
-['<div class="DLG_window_old">																',
-	'<div id="divContent">																	',
-	'	<table border="0" width="100%">														',
-	'		<tr valign=center height=10px><td colspan=2></td></tr>							',
-	'		<tr valign=center height="100%">												',
-	'			<td colspan=2>																',
-	'				<table width="100%" height="100%" border=0>								',
-	'					<tr valign=center height=*>											',
-	'						<td align=center width=10px>&nbsp;</td>							',
-	'						<td align=center width=*><span id="mb_message_div_myid"></span></td>	',
-	'						<td align=center width=10px>&nbsp;</td>							',
-	'					</tr>																',
-	'				</table>																',
-	'			</td>																		',
-	'		</tr>																			',
-	'		<tr valign=center height=10px><td colspan=2></td></tr>							',
-	'		<tr valign=center height=20px>													',
-	'			<td colspan=2 align=center>													',
-	'				<div id="mb_button_div_myid">&nbsp;</div>									',
-	'			</td>																		',
-	'		</tr>																			',
-	'		<tr valign=center height=10px><td colspan=2></td></tr>							',
-	'	</table>																			',
-	'</div>																					',
-'</div>'];
+var INC_dlgMsgBox =	"																		\
+<div class='DLG_window_old'>																\
+	<div id='divContent'>																	\
+		<table border='0' width='100%'>														\
+			<tr valign=center height=10px><td colspan=2></td></tr>							\
+			<tr valign=center height='100%'>												\
+				<td colspan=2>																\
+					<table width='100%' height='100%' border=0>								\
+						<tr valign=center height=*>											\
+							<td align=center width=10px>&nbsp;</td>							\
+							<td align=center width=*><span id='mb_message_div_myid'></span></td>	\
+							<td align=center width=10px>&nbsp;</td>							\
+						</tr>																\
+					</table>																\
+				</td>																		\
+			</tr>																			\
+			<tr valign=center height=10px><td colspan=2></td></tr>							\
+			<tr valign=center height=20px>													\
+				<td colspan=2 align=center>													\
+					<div id='mb_button_div_myid'>&nbsp;</div>									\
+				</td>																		\
+			</tr>																			\
+			<tr valign=center height=10px><td colspan=2></td></tr>							\
+		</table>																			\
+	</div>																					\
+</div>";
 
 var INC_dlgPromptBox =	"																		\
 <div class='DLG_window_old'>																\
@@ -65,9 +65,7 @@ var INC_dlgPromptBox =	"																		\
 	</div>																					\
 </div>";
 
-var zidx = 1000;
-
-
+var jsDialog_zIdx = 2000; // must be higher than drag items (1000)
 
 function jsDialog(pWinId)
 {
@@ -113,6 +111,17 @@ jsDialog.prototype.create = function(doc)
 	this.bCreated = true;
 
 	this.createDivEles();
+	
+	//echo bug 19271 : Check to see if the screen size is smaller than the dialog width. This is to prevent the dialog from being cutoff on mobile devices. 
+	var w = window,
+		d = document,
+		e = d.documentElement,
+		g = d.getElementsByTagName('body')[0],
+		screenWidth = w.innerWidth  || e.clientWidth  || g.clientWidth;
+		
+	if(this.width > screenWidth)
+		this.setWidth(screenWidth);
+		
 	this.divEleContent.style.width  = this.width + "px";
 	this.divEleContent.style.height = this.isAutoRsz ? '' : (this.height - this.titleHt - this.titleHtAdj) + "px";
 	this.divEleTitle_txt.innerHTML = this.title;
@@ -149,16 +158,16 @@ jsDialog.prototype.createDivEles = function()
 	this.divModal = this.doc.createElement('DIV');
 	this.divModal.id = 'DLG_ModalDiv_' + this.winId;
 	this.divModal.className = 'DLG_modalDiv';
-	this.divModal.style.zIndex = zidx;
-	zidx = zidx + 2;
+	this.divModal.style.zIndex = jsDialog_zIdx;
+	jsDialog_zIdx = jsDialog_zIdx + 2;
 	this.doc.body.appendChild(this.divModal);
 	jsDialog.resizeModalDiv(this.divModal);
 
 	this.divEle = this.doc.createElement('DIV');
 	this.divEle.id = 'DLG_Div_' + this.winId;
 	this.divEle.className = 'DLG_window';
-	this.divEle.style.zIndex = zidx;
-	zidx++;
+	this.divEle.style.zIndex = jsDialog_zIdx;
+	jsDialog_zIdx++;
 	this.doc.body.appendChild(this.divEle);
 
 	this.divEleInner = this.doc.createElement('DIV');
@@ -178,7 +187,7 @@ jsDialog.prototype.createDivEles = function()
 			this.divDrg.className = 'DLG_dragDiv';
 			this.divDrg.style.left = '0px';
 			this.divDrg.style.top = (this.titleHt + this.titleHtAdj) + 'px';
-			this.divDrg.style.zIndex = zidx - 2;
+			this.divDrg.style.zIndex = jsDialog_zIdx - 2;
 			this.divEleInner.appendChild(this.divDrg);
 		}
 	}
@@ -334,8 +343,25 @@ jsDialog.prototype.setInitWinPos = function()
 	var left = -1;
 	var top = -1;
 	var d = this.doc;
-   	var bodyWidth = winW;
-   	var bodyHeight = winH;
+   	var bodyWidth = 0;
+   	var bodyHeight = 0;
+   	try {
+		bodyWidth = winW;
+		bodyHeight = winH;
+	}
+	catch (e)
+	{
+		if (navigator.appVersion.indexOf('MSIE 8')!=-1 || navigator.appVersion.indexOf('MSIE 7')!=-1) {
+		    bodyWidth = winW = document.documentElement.clientWidth - 16;
+		    bodyHeight = winH = document.documentElement.clientHeight;
+		}
+		else
+		{
+		   bodyWidth =  winW = (window.innerWidth)? window.innerWidth-16 : document.body.offsetWidth-20
+		   bodyHeight = winH = (window.innerHeight)? window.innerHeight   : document.body.offsetHeight
+		}
+	}		
+ 
 
 	left = ( this.xPos < 0 ? Math.ceil((bodyWidth - this.width) / 2) : this.xPos );
 	top = ( this.yPos < 0 ? Math.ceil((bodyHeight - this.height) / 2) +  topOffset : this.yPos );
@@ -728,7 +754,7 @@ jsDlgMsgBox.prototype.onInitDialog = function()
 	var THIS = this;
 	var ele = this.doc.getElementById('IDOK_'+this.winId);
 	if( ele ) ele.onclick = function(e){ return THIS.onBtn(e,IDOK); };
-	if( ele ) ele.focus();
+	if( ele && !is.iOS ) ele.focus(); // the !is.iOS check: BUG 21133
 	ele = this.doc.getElementById('IDCAN_'+this.winId);
 	if( ele ) ele.onclick = function(e){ return THIS.onBtn(e,IDCAN); };
 		
@@ -765,7 +791,9 @@ jsDlgMsgBox.prototype.onBtn = function(e,btnId)
 {
 	var cb = this.cbFunc;
 	this.endDialog();
-	if( cb )
+	if(cb && typeof(cb) == 'string' ) 
+		eval(cb);
+	else if(cb && typeof(cb) == 'function' ) 
 		return cb(e, btnId);
 	return btnId;
 };

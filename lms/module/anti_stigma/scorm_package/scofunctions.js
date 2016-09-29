@@ -53,7 +53,7 @@ function MySetValue( lmsVar, lmsVal ) {
 function loadPage() {
   var startDate = readVariable( 'TrivantisSCORMTimer', 0 );
   saveVariable( 'TrivantisEPS', 'F' );
-  if( startDate == 0 ) {
+  if( startDate == 0 || !LMSIsInitialized() ) {
     var result = LMSInitialize();
     var status = new String( LMSGetValue( "cmi.core.lesson_status" ) );
     status = status.toLowerCase();
@@ -118,13 +118,14 @@ function doQuit(bForce){
   finishCalled = true;
   result = LMSFinish();
   saveVariable( 'TrivantisSCORMTimer', 0 );
-  if(bForce) parent.top.close()
+  if( bForce && window.myTop ) window.myTop.close()
 }
 
-function unloadPage(bForce) {
+function unloadPage(bForce, titleName) {
   var exitPageStatus = readVariable( 'TrivantisEPS', 'F' );
   if (exitPageStatus != 'T') {
-    if( window.name.length > 0 && window.name.indexOf( 'Trivantis_' ) == -1 ) doQuit(bForce);
+    if( window.name.length > 0 && window.name.indexOf( 'Trivantis_' ) == -1 )
+      trivScormQuit(bForce, titleName, false);
   }
   else if( finishCalled != true && autoCommit == true ) {
     computeTime();

@@ -1,0 +1,103 @@
+<!doctype html>
+<html>
+<head>
+<script src="jquery.tools.min.js "></script>
+<meta charset="utf-8">
+<title>Managing Julie (Part 2)</title>
+<link href="layout.css" rel="stylesheet" type="text/css">
+</head>
+
+<body>
+<div class="scrollContainerContentPages">
+<h1>Managing Julie (Part 2)</h1>
+
+
+<style>
+.span_4_of_12 {width:31%;}
+.round_box_contents {display:none;}
+.correct {color:#189313;}
+.incorrect {color: #D71619;}
+</style>
+<script>
+function show_feedback(box_no) {
+$('.span_4_of_12').removeClass('round_box_clicked');
+$('.span_4_of_12').addClass('round_box_link');
+$("#box"+box_no).addClass('round_box_clicked');
+$("#box"+box_no).removeClass('round_box_link');
+$('.round_box_contents').hide('fast');
+$('#box'+box_no).fadeIn();
+}
+
+function select_option(box_no) {
+	$("#cor").val(box_no);	
+}
+</script>
+<input type="hidden" id="cor">
+<p>Julie  returns two weeks later and you ask how she has been since you last saw her.  Julie states that it&rsquo;s been a rough two weeks. She states that she&rsquo;s been  having more urges to cut ever since the last medical appointment and that last  night she did, in fact, cut herself. Her doctor asks if she has any idea as to  why. Julie says &ldquo;I&rsquo;m not sure but I think it&rsquo;s because I told you about the  abuse.&rdquo;  </p>
+<p>&nbsp;</p>
+
+<p><strong>Is Julie a good candidate for psychotherapy?</strong></p>
+<p>&nbsp;</p>
+<div style="border-radius:15px;	border:2px solid #bf7c48;padding:5px 7px 5px 15px;">
+
+
+
+<br clear="all">
+
+<div style="padding:0 0 0 15px;">
+<p><label><input type="radio" onclick="select_option(1)" name="question1"> 
+Yes, stage 1 trauma therapy</label></p>
+<p><label><input type="radio" onclick="select_option(2)" name="question1">
+ Yes, stage 2 trauma therapy </label></p>
+<p><label><input type="radio" onclick="select_option(3)" name="question1">
+ No </label></p>
+<label><input type="radio" onclick="select_option(4)" name="question1"> 
+I don't know </label></p>
+<p>&nbsp;</p>
+<p>
+  <input type="submit" onclick="show_feedback($('#cor').val())">
+</p>
+</div>
+
+<br clear="all">
+
+<div class="round_box_contents" id="box1">
+<p><strong class="correct">Chosen Answer: Yes, stage 1 trauma therapy</strong></p>
+<p>&nbsp;</p>
+<p><strong class="correct">Correct Answer: Yes, stage 1 trauma therapy</strong></p>
+<p>This answer might seem counterintuitive because didn’t talking about the abuse exacerbate her symptoms? In fact, Julie is a good candidate for stage 1 trauma therapy because the focus of stage 1 trauma therapy is safety and stabilization. Julie has demonstrated two important things that make it clear that she is appropriate for stage 1 trauma therapy. First, she can see a connection between talking about her trauma history and having urges to cut. The fact that she can see this connection and talk about it is a positive sign about her ability to reflect on herself in relation to her trauma history and suggests she is a good candidate for psychotherapy. Second, it appears that talking about the abuse resulted in her being flooded with unbearable feelings related to the abuse, which led to strong urges to cut in order to manage the pain. It is for this reason that the focus of therapy should be on safety and stabilization. Julie needs to learn better coping strategies for dealing with the intense feelings that are activated when she is triggered so that she can keep herself safe and stable. This is necessary before she can begin the stage 2 work of talking about her trauma memories.</p>
+<p>&nbsp;</p>
+</div>
+
+<div class="round_box_contents" id="box2">
+<p><strong class="incorrect">Chosen Answer: Yes, stage 2 trauma therapy</strong></p>
+<p>Julie can see a connection between talking about her trauma history and having urges to cut and she can talk about it. This is a positive sign about her ability to reflect on herself in relation to her trauma history and suggests she is a good candidate for psychotherapy. However, talking about her trauma history led to her having the urge to cut and to actually cutting herself. This suggests that she might not yet be ready for stage 2 trauma therapy where the focus is on talking about traumatic memories. Stage 2 work involves having survivors revisit their traumatic past so that can integrate those experiences into a revised sense of self and the world. Stage 2 work inevitably stirs up aversive emotional states and the survivor must have the capacity to tolerate those feelings as uncomfortable as they may be. Once Julie shows a capacity to manage difficult feelings without engaging in self-injury and demonstrates that she is reasonably stable in her life, then stage 2 may be an appropriate next step in her healing process.</p>
+<p>&nbsp;</p>
+<p><strong class="correct">Correct Answer: Yes, stage 1 trauma therapy</strong></p>
+<p>This answer might seem counterintuitive because didn’t talking about the abuse exacerbate her symptoms? In fact, Julie is a good candidate for stage 1 trauma therapy because the focus of stage 1 trauma therapy is safety and stabilization. Julie has demonstrated two important things that make it clear that she is appropriate for stage 1 trauma therapy. First, she can see a connection between talking about her trauma history and having urges to cut. The fact that she can see this connection and talk about it is a positive sign about her ability to reflect on herself in relation to her trauma history and suggests she is a good candidate for psychotherapy. Second, it appears that talking about the abuse resulted in her being flooded with unbearable feelings related to the abuse, which led to strong urges to cut in order to manage the pain. It is for this reason that the focus of therapy should be on safety and stabilization. Julie needs to learn better coping strategies for dealing with the intense feelings that are activated when she is triggered so that she can keep herself safe and stable. This is necessary before she can begin the stage 2 work of talking about her trauma memories.</p>
+<p>&nbsp;</p>
+</div>
+
+<div class="round_box_contents" id="box3">
+<p><strong class="incorrect">Chosen Answer: No</strong></p>
+<p>It is understandable that one might think trauma therapy is not advisable given that she seemed to get worse after talking about her trauma history. One thing this does suggest is that if she enters therapy to address her trauma, the therapy needs to be at a pace and have a focus that she can tolerate. Even so, it is important to recognize that engaging in psychotherapy will be challenging and at times it may seem that it is making things worse. While those moments may occur from time to time, the general pattern should be one of change and growth. However, it is important to recognize that for individuals with a history of chronic traumatization, progress may be slow and uneven.</p>
+<p>&nbsp;</p>
+<p><strong class="correct">Correct Answer: Yes, stage 1 trauma therapy</strong></p>
+<p>This answer might seem counterintuitive because didn’t talking about the abuse exacerbate her symptoms? In fact, Julie is a good candidate for stage 1 trauma therapy because the focus of stage 1 trauma therapy is safety and stabilization. Julie has demonstrated two important things that make it clear that she is appropriate for stage 1 trauma therapy. First, she can see a connection between talking about her trauma history and having urges to cut. The fact that she can see this connection and talk about it is a positive sign about her ability to reflect on herself in relation to her trauma history and suggests she is a good candidate for psychotherapy. Second, it appears that talking about the abuse resulted in her being flooded with unbearable feelings related to the abuse, which led to strong urges to cut in order to manage the pain. It is for this reason that the focus of therapy should be on safety and stabilization. Julie needs to learn better coping strategies for dealing with the intense feelings that are activated when she is triggered so that she can keep herself safe and stable. This is necessary before she can begin the stage 2 work of talking about her trauma memories.</p>
+<p>&nbsp;</p>
+</div>
+<div class="round_box_contents" id="box4">
+<p><strong class="incorrect">Chosen Answer: I don't know</strong></p>
+<p>This is an understandable response. It may seem confusing that Julie would have this setback after the experience she had with her doctor who was supportive and understanding. Working with trauma survivors can often feel confusing and even the most experienced trauma therapists can sometimes wonder if they are being helpful or making things worse. Something else to consider is that sometimes what we are feeling when working with trauma survivors is actually what that they are feeling. It can be helpful to pay attention to your own feelings when working with trauma survivors because it might be giving you a taste of what they are feeling in that moment. </p>
+<p>&nbsp;</p>
+<p><strong class="correct">Correct Answer: Yes, stage 1 trauma therapy</strong></p>
+<p>This answer might seem counterintuitive because didn’t talking about the abuse exacerbate her symptoms? In fact, Julie is a good candidate for stage 1 trauma therapy because the focus of stage 1 trauma therapy is safety and stabilization. Julie has demonstrated two important things that make it clear that she is appropriate for stage 1 trauma therapy. First, she can see a connection between talking about her trauma history and having urges to cut. The fact that she can see this connection and talk about it is a positive sign about her ability to reflect on herself in relation to her trauma history and suggests she is a good candidate for psychotherapy. Second, it appears that talking about the abuse resulted in her being flooded with unbearable feelings related to the abuse, which led to strong urges to cut in order to manage the pain. It is for this reason that the focus of therapy should be on safety and stabilization. Julie needs to learn better coping strategies for dealing with the intense feelings that are activated when she is triggered so that she can keep herself safe and stable. This is necessary before she can begin the stage 2 work of talking about her trauma memories.</p>
+<p>&nbsp;</p>
+</div>
+</div>
+
+
+<br clear="all">
+</div>
+</body>
+</html>

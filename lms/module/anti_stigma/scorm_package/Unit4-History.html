@@ -1,0 +1,185 @@
+<!doctype html>
+<html>
+<head>
+<script src="jquery.tools.min.js"></script>
+<script src="jquery2.tools.min.js"></script>
+<meta charset="utf-8">
+<title>Taking Robert’s History</title>
+<link href="layout.css" rel="stylesheet" type="text/css">
+
+	<title>Posttraumatic Stress Disorder</title>
+	<meta name="description" content="Course Description">
+
+	<meta name="author" content="www.mdcme.ca">
+
+	<meta http-equiv="cleartype" content="on">
+
+
+
+</head>
+
+<body onLoad="clickAnswer('ans1a','q1')">
+<div class="scrollContainerContentPages">
+<h1>Taking Robert’s History</h1>
+
+<style>
+	.robert_keypoints {display:none;}
+</style>
+<script>
+	function clickAnswer(ans,el) {
+		if(!($('.sidebar').is(':visible'))) $('.sidebar').fadeIn('fast');
+		$('.robert_keypoints').fadeOut('fast');
+		$('#'+ans).fadeIn('slow');
+		var vid = "";
+		switch(ans) {
+			case "ans1a":
+				vid = "https://www.youtube.com/embed/T2UZzSTFFxk?rel=0";
+				break;
+			case "ans2a":
+				vid = "https://www.youtube.com/embed/5w3mkJHSbpA?rel=0";
+				break;
+			case "ans3a":
+				vid = "https://www.youtube.com/embed/mCxxyTvaDYw?rel=0";
+				break;
+			case "ans4a":
+				vid = "https://www.youtube.com/embed/g3BK2902qzI?rel=0";
+				break;
+			default:
+				break;
+		}		
+		if(vid!="") {
+			$("#robert_video").html("<iframe width='560' height='345' src='"+vid+"' frameborder='0' allowfullscreen></iframe>");
+		} else {
+			$("#robert_video").html("<p class='instruction' style='width:95%'>&ldquo;I suggest that you read the information I&rsquo;ve given you, and look up the websites I&rsquo;ve recommended. There&rsquo;s information for spouses and families in there too. And let&rsquo;s book an appointment for next week, to discuss this further. What I&rsquo;d like you to do, if possible, is to invite your wife in for the next appointment. We can meet together for part of the time, and I can answer any questions you both have. Then you and I can meet for part of the visit, to plan a way forward for your treatment.&rdquo;</p>");
+			$('.sidebar').fadeOut('fast');
+		}
+		return false;
+	}
+</script>
+
+
+<div class="Wrapper">
+  <div class="Column03Left">
+
+
+<p>On review of Robert’s medical file, you note that on his last appointment six months ago, his physical exam, baseline EKG and lab work were normal. He was on no medication. You noted he was in excellent physical health. He had told you that he had served in the Infantry, and was deployed 4 times during his career, to the former Yugoslavia, Rwanda, and twice to Afghanistan.  He denied any history of medical problems.  He denied a history of childhood abuse or neglect, and denied a personal or family history of mental disorders, including no history of hopelessness, suicidality, or self-harm. At that visit, he also reported drinking up to a dozen beer at a time on weekends. He told you this wasn’t a problem, and agreed to cut down on his drinking when you advised it. He denied any drug abuse.</p>
+<p>&nbsp;</p>
+<h3>What do you discuss with Robert?</h3>
+
+<ul class="tabs-nav">
+<li class="active"><a href="#tab1" onClick="clickAnswer('ans1a','q1')"><i class="mini-ico-exclamation-sign"></i>1. Sleep problems</a></li>
+<li><a href="#tab2" onClick="clickAnswer('ans2a','q2')">2. Anxiety</a></li>
+<li><a href="#tab3" onClick="clickAnswer('ans3a','q3')">3. Traumatic events</a></li>
+<li><a href="#tab4" onClick="clickAnswer('ans4a','q4')">4.  Effects of symptoms</a></li>
+</ul>
+ 
+<div class="tabs-container">
+ 
+<div class="tab-content" id="tab1">
+<div align="center">
+<iframe width='485' height='300' src='https://www.youtube.com/embed/T2UZzSTFFxk?rel=0' frameborder='0' allowfullscreen></iframe></div>
+</div>
+ 
+<div class="tab-content" id="tab2">
+<div align="center">
+<iframe width='485' height='300' src='https://www.youtube.com/embed/5w3mkJHSbpA?rel=0' frameborder='0' allowfullscreen></iframe></div>
+</div>
+
+<div class="tab-content" id="tab3">
+<div align="center">
+<iframe width='485' height='300' src='https://www.youtube.com/embed/mCxxyTvaDYw?rel=0' frameborder='0' allowfullscreen></iframe></div>
+</div>
+
+<div class="tab-content" id="tab4">
+<div align="center">
+<iframe width='485' height='300' src='https://www.youtube.com/embed/g3BK2902qzI?rel=0' frameborder='0' allowfullscreen></iframe></div>
+</div>
+ 
+</div>
+
+</div>
+  
+<div class="Column03Right">
+  
+    
+     <div class="sidebar" style="display:none;">
+ 
+ <div class="robert_keypoints" id="ans1a">
+<h3>Points to Note:</h3>
+<ul>
+ <li>Always ask about sleep problems, which are common in most mental disorders.</li>
+ <li>PTSD sleep problems can include: nightmares, night terrors, flailing of arms and legs, profuse sweating, yelling, moaning, or somnambulism.</li>
+</ul>
+  </div>
+  
+  <div class="robert_keypoints" id="ans2a">
+<h3>Points to Note:</h3>
+<ul>
+ <li>Panic symptoms and agoraphobia are common in PTSD.</li>
+ <li>Fear of crowds is common in PTSD related to military or humanitarian missions.</li>
+</ul>
+  </div>
+  
+  <div class="robert_keypoints" id="ans3a">
+ <h3>Points to Note:</h3>
+<ul>
+ <li>Ask about anger and angry behavior to assess risk.</li>
+ <li>It is common to be triggered when recounting details of a trauma history. Check patients' mental status frequently during history-taking, including assessment for suicidality.  (Note: This is not demonstrated in this video.) Do this again at the end of the appointment, before they leave. Warn them they may have a delayed reaction to the retelling. This will help them manage their reactions.</li>
+</ul>
+  </div>
+  
+  <div class="robert_keypoints" id="ans4a">
+<h3>Points to Note:</h3>
+<ul>
+ <li>PTSD affects all areas of the patient's life.</li>
+ <li>Physical symptoms such as nausea and vomiting are common in PTSD.</li>
+ <li>The patient's family is often affected by PTSD symptoms.</li>
+</ul>
+  </div>
+  </div>
+    
+    
+    <script>
+/*----------------------------------------------------*/
+/*           Tabs
+/*----------------------------------------------------*/
+ 
+                (function() {
+ 
+                                var $tabsNav    = $('.tabs-nav'),
+                                                $tabsNavLis = $tabsNav.children('li'),
+                                                $tabContent = $('.tab-content');
+ 
+                                $tabsNav.each(function() {
+                                                var $this = $(this);
+ 
+                                                $this.next().children('.tab-content').stop(true,true).hide()
+                                                                                                                                                                                                .first().show();
+ 
+                                                $this.children('li').first().addClass('active').stop(true,true).show();
+                                });
+ 
+                                $tabsNavLis.on('click', function(e) {
+                                                var $this = $(this);
+ 
+                                                $this.siblings().removeClass('active').end()
+                                                                .addClass('active');
+                                               
+                                                $this.parent().next().children('.tab-content').stop(true,true).hide()
+                                                                                                                                                                                                                                  .siblings( $this.find('a').attr('href') ).fadeIn();
+ 
+                                                e.preventDefault();
+                                });
+ 
+                })();
+                </script>
+    
+    
+    
+</div>  
+<br clear="all">
+</div>
+</body>
+</html>
+
+

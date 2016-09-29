@@ -1,0 +1,171 @@
+<!doctype html>
+<html>
+<head>
+
+<script src="jquery.js"></script>
+<link rel="stylesheet" type="text/css" href="jquery.fancybox.css" />
+<link rel="stylesheet" type="text/css" href="jquery.fancybox-buttons.css" />
+<style type="text/css">
+#wrap { width: 100%;}
+a {outline: 0 none;}
+}
+</style>
+<script type="text/javascript" src="jquery.fancybox.js"></script>
+<script type="text/javascript" src="jquery.fancybox-buttons.js"></script>
+ 
+<script>
+/* <![CDATA[ */
+$(document).ready(function() {
+                $('.imagen').click(function(e){
+                                e.preventDefault();
+parent.$.fancybox([
+{href:'ImgFullSocioStatus.jpg', title: ''}
+],{
+//                                            href: this.href,
+                                                helpers: {
+                                                                overlay: {
+                                                                opacity: 0.3
+                                                                } // overlay
+                                                                //, buttons: {}
+                                                } // helpers
+                                }); // fancybox
+                }); // click
+                $('.video').click(function(e){
+                                e.preventDefault();
+                                parent.$.fancybox({
+                                                href: this.href,
+                                                width: 560,
+                                                height: 315,
+                                                type: 'iframe',
+                                                helpers: {
+                                                                overlay: {
+                                                                opacity: 0.3
+                                                                } // overlay
+                                                } // helpers
+                                }); // fancybox
+                }); // click
+$(".pdf").click(function(){
+parent.$.fancybox({
+type: 'html',
+autoSize: false,
+content: '<embed src="'+this.href+'#nameddest=self&page=1&view=FitH,0&zoom=80,0,0" type="application/pdf" height="99%" width="100%" />',
+beforeClose: function() {
+$(".fancybox-inner").unwrap();
+},
+                                                helpers: {
+                                                                overlay: {
+                                                                opacity: 0.3
+                                                                } // overlay
+                                                }
+}); //fancybox
+return false;
+}); //click             
+}); // ready
+/* ]]> */
+</script>
+
+<script type="text/javascript" src="jquery.fancybox.js"></script>
+<script type="text/javascript" src="jquery.fancybox-buttons.js"></script>
+
+<script src="jquery2.tools.min.js"></script>
+<meta charset="utf-8">
+<title>Introduction</title>
+<link href="layout.css" rel="stylesheet" type="text/css">
+</head>
+
+<body><div class="scrollContainerContentPages">
+<div class="simple_overlay" id="mies1"><img src="ImgFullSocioStatus.jpg" width="445" height="525" alt=""/> </div>
+<h1>Introduction</h1>
+
+<ul class="tabs-nav">
+<li class="active"><a href="#tab1"><i class="mini-ico-exclamation-sign"></i>Socioeconomic Status and Health</a></li>
+<li><a href="#tab2">Socioeconomic Status and Use of Health Services</a></li>
+</ul>
+ 
+<div class="tabs-container">
+ 
+<div class="tab-content" id="tab1">
+  <h2>Socioeconomic Status and Health</h2>
+  <p> Here&rsquo;s some of the evidence reported about low income and  individual health.</p>
+  <p>&nbsp;</p>
+  <table border="0" cellspacing="10" cellpadding="10">
+    <tr>
+      <td align="left" valign="top"><a href='ImgFullSocioStatus.jpg' a class='imagen' ><img src="thmSocioStatus.jpg" alt="" width="160" height="188"></a></td>
+      <td align="left" valign="top"><ul style="padding: 0px 0px ; margin: 0px 0px ;">
+        <li> Between 1991 and 2001, Canadians who enjoyed a higher  socioeconomic status (defined by education, occupation or  income) lived longer. <br>
+          <br>
+        </li>
+        <li> On the 1996-97 National Population Health Survey, 73% of  Canadians in the highest income group rated their health as  excellent, while only 47% in the lowest income group did so. <br>
+          <br>
+        </li>
+        <li> Many individual conditions - migraines, emotional problems,  respiratory conditions, gastric ulcers, appendiceal rupture,  poor postpartum health, obesity, and various infectious  diseases – are regularly associated with lower  socioeconomic status. <sup>[12]</sup></li>
+      </ul></td>
+    </tr>
+  </table>
+  <p>&nbsp;</p>
+</div>
+ 
+<div class="tab-content" id="tab2">
+  <h2>Socioeconomic Status and Use of Health Services </h2>
+  <p>A review of 14 peer-reviewed studies on utilization of care  and income points to the following conclusions: </p>
+  <ul>
+    <li> The evidence of an association between lower  socioeconomic status (SES) and use of family physicians  is relatively equally divided among studies that report  increased use, decreased use, and no relationship. <br>
+      <br>
+    </li>
+    <li>A majority of studies find an association between lower  SES and increased hospital use.<sup>[13]</sup><br>
+      <br>
+    </li>
+    <li>A majority of studies find an association between lower  SES and less use of specialist services compared to  persons of higher SES.</li>
+  </ul>
+</div>
+ 
+</div>
+
+
+<p>&nbsp; </p>
+<p>&nbsp;</p>
+
+<br clear="all">
+
+<script>
+/*----------------------------------------------------*/
+/*           Tabs
+/*----------------------------------------------------*/
+ 
+                (function() {
+ 
+                                var $tabsNav    = $('.tabs-nav'),
+                                                $tabsNavLis = $tabsNav.children('li'),
+                                                $tabContent = $('.tab-content');
+ 
+                                $tabsNav.each(function() {
+                                                var $this = $(this);
+ 
+                                                $this.next().children('.tab-content').stop(true,true).hide()
+                                                                                                                                                                                                .first().show();
+ 
+                                                $this.children('li').first().addClass('active').stop(true,true).show();
+                                });
+ 
+                                $tabsNavLis.on('click', function(e) {
+                                                var $this = $(this);
+ 
+                                                $this.siblings().removeClass('active').end()
+                                                                .addClass('active');
+                                               
+                                                $this.parent().next().children('.tab-content').stop(true,true).hide()
+                                                                                                                                                                                                                                  .siblings( $this.find('a').attr('href') ).fadeIn();
+ 
+                                                e.preventDefault();
+                                });
+ 
+                })();
+                </script>
+                
+                
+
+
+
+</div>
+</body>
+</html>

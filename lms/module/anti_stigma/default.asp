@@ -9,7 +9,7 @@
 <!--#include file="../../../lib/scorm_code.asp" -->
 <script src="/assets/custom/js/opd_scorm.js"></script>
 <input type="hidden" value="<%=session("memberID") %>" id="memberID">
-<input type="hidden" value="<%= LMSid %>" id="LMSid">
+<input type="text" value="<%= LMSid %>" id="LMSid">
 <input type="text" id="scorm_version">
 <script>
 function GetStudentName() {

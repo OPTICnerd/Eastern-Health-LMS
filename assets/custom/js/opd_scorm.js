@@ -97,7 +97,8 @@ function saveData(model, value) {
 			case "cmi.suspend_data":
 				//console.log("bookmark!");
 				//console.log(model+" ** "+value+"'"); 
-				var url = "https://easternhealth.mycpd.ca/lms/scorm.asp?a=2&bookmark="+value+"&course="+courseID+"&mem="+memID+"";
+				var encodedString = btoa(value);
+				var url = "https://easternhealth.mycpd.ca/lms/scorm.asp?a=2&bookmark="+encodedString+"&course="+courseID+"&mem="+memID+"";
 				//console.log(url);
         		xhr.open('POST', url, true);
        			xhr.send('');
